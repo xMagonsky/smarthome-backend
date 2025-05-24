@@ -1,4 +1,4 @@
-module smarthomebackend
+module smarthome
 
 go 1.24.1
 
