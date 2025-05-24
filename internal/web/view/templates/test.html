@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page</title>
+</head>
+<body>
+    <h1>Hello from Gin HTML template!</h1>
+    <p>This is a test HTML page served by Gin.</p>
+
+    <!-- Example: Output a variable -->
+    <p>Message: {{ .Message }}</p>
+
+    <!-- Example: If statement -->
+    {{ if .ShowDetails }}
+        <div>Details are shown because ShowDetails is true.</div>
+    {{ else }}
+        <div>Details are hidden.</div>
+    {{ end }}
+
+    <!-- Example: Range over a slice -->
+    <ul>
+    {{ range .Items }}
+        <li>{{ . }}</li>
+    {{ else }}
+        <li>No items found.</li>
+    {{ end }}
+    </ul>
+
+    <!-- Example: Use a function (e.g., title) -->
+    <p>{{ .Name | title }}</p>
+</body>
+</html>
