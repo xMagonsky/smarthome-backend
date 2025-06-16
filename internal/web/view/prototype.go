@@ -12,7 +12,7 @@ import (
 type Dependencies struct {
 }
 
-func RegisterRoutes(router *gin.Engine, deps Dependencies) {
+func RegisterTestRoutes(router *gin.Engine, deps Dependencies) {
 
 	router.SetFuncMap(template.FuncMap{
 		"title": func(s string) string {
