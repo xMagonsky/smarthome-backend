@@ -1,0 +1,29 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: smarthome
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  emqx:
+    image: emqx/emqx:latest
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+    environment:
+      EMQX_ALLOW_ANONYMOUS: "yes"
+      EMQX_ACL_NOMATCH: "allow"
+  engine:
+    build: .
+    depends_on:
+      - postgres
+      - redis
+      - emqx
+    env_file:
+      - .env
