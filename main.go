@@ -15,7 +15,6 @@ import (
 	"smarthome/internal/scheduler"
 	"smarthome/internal/taskqueue"
 	"smarthome/internal/utils"
-	"smarthome/internal/web"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
@@ -30,8 +29,8 @@ func test() {
 	}
 	defer mqttClient.Disconnect(0)
 
-	webServer := web.NewWebServer(mqttClient)
-	webServer.Start(":5069")
+	// webServer := web.NewWebServer(mqttClient)
+	// webServer.Start(":5069")
 }
 
 func main() {
@@ -60,6 +59,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to MQTT: %v", err)
 	}
+
+	// Initialize task queue with global instances
+	taskqueue.SetGlobalInstances(dbConn, redisClient, mqttClient)
 
 	// Initialize task queue workers
 	go taskqueue.StartWorkers(cfg.RedisAddr)

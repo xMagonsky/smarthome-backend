@@ -4,8 +4,8 @@
     <title>Test Page</title>
 </head>
 <body>
-    <h1>Hello from Gin HTML template!</h1>
-    <p>This is a test HTML page served by Gin.</p>
+    <h1>Hello from Smart Home Backend!</h1>
+    <p>This is the main test page for your smart home system.</p>
 
     <!-- Example: Output a variable -->
     <p>Message: {{ .Message }}</p>
@@ -28,11 +28,18 @@
 
     <!-- Example: Use a function (e.g., title) -->
     <p>{{ .Name | title }}</p>
+
+    <h2>Quick Actions</h2>
+    <ul>
+        <li><a href="/rules">Test Automation Rules</a> - View and test your smart home rules</li>
+        <li><a href="/test">Device Control Test</a> - Test MQTT device control</li>
+    </ul>
+
     <form method="POST" action="/test">
-        <button type="submit" name="action" value="ON">ON</button>
+        <button type="submit" name="action" value="ON">Turn LED ON</button>
     </form>
     <form method="POST" action="/test">
-        <button type="submit" name="action" value="OFF">OFF</button>
+        <button type="submit" name="action" value="OFF">Turn LED OFF</button>
     </form>
 </body>
 </html>

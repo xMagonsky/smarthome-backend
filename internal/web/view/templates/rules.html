@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Home Rules</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .rule-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .rule-card h3 { margin-top: 0; color: #333; }
+        .enabled { color: green; }
+        .disabled { color: red; }
+        .test-btn { background: #007bff; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+        .test-btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Smart Home Automation Rules</h1>
+    <p>Here are all your automation rules. Click "Test Rule" to try different conditions.</p>
+
+    {{range .Rules}}
+    <div class="rule-card">
+        <h3>{{.Name}}</h3>
+        <p><strong>ID:</strong> {{.ID}}</p>
+        <p><strong>Status:</strong>
+            {{if .Enabled}}
+                <span class="enabled">Enabled</span>
+            {{else}}
+                <span class="disabled">Disabled</span>
+            {{end}}
+        </p>
+        <a href="/rules/test/{{.ID}}" class="test-btn">Test Rule</a>
+    </div>
+    {{else}}
+    <p>No rules found. Create some rules first!</p>
+    {{end}}
+
+    <br>
+    <a href="/">← Back to Home</a>
+</body>
+</html>

@@ -9,7 +9,7 @@ import (
 
 // GetAllSchedules fetches all schedules
 func (d *DB) GetAllSchedules(ctx context.Context) ([]models.Schedule, error) {
-	rows, err := d.conn.Query(ctx, "SELECT id, rule_id, cron_expression, enabled FROM schedules")
+	rows, err := d.pool.Query(ctx, "SELECT id, rule_id, cron_expression, enabled FROM schedules")
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (d *DB) GetAllSchedules(ctx context.Context) ([]models.Schedule, error) {
 // GetRuleByID fetches a rule
 func (d *DB) GetRuleByID(ctx context.Context, id string) (*models.Rule, error) {
 	var r models.Rule
-	err := d.conn.QueryRow(ctx, "SELECT id, name, conditions, actions, enabled FROM rules WHERE id = $1", id).
+	err := d.pool.QueryRow(ctx, "SELECT id, name, conditions, actions, enabled FROM rules WHERE id = $1", id).
 		Scan(&r.ID, &r.Name, &r.Conditions, &r.Actions, &r.Enabled)
 	if err != nil {
 		return nil, err
@@ -39,19 +39,19 @@ func (d *DB) GetRuleByID(ctx context.Context, id string) (*models.Rule, error) {
 
 // UpdateDeviceState updates device state
 func (d *DB) UpdateDeviceState(ctx context.Context, id string, state json.RawMessage) error {
-	_, err := d.conn.Exec(ctx, "UPDATE devices SET state = $1 WHERE id = $2", state, id)
+	_, err := d.pool.Exec(ctx, "UPDATE devices SET state = $1 WHERE id = $2", state, id)
 	return err
 }
 
 // LogAction logs to history
 func (d *DB) LogAction(ctx context.Context, ruleID, deviceID string, state json.RawMessage) error {
-	_, err := d.conn.Exec(ctx, "INSERT INTO device_states_history (rule_id, device_id, timestamp, state) VALUES ($1, $2, NOW(), $3)", ruleID, deviceID, state)
+	_, err := d.pool.Exec(ctx, "INSERT INTO device_states_history (rule_id, device_id, timestamp, state) VALUES ($1, $2, NOW(), $3)", ruleID, deviceID, state)
 	return err
 }
 
 // GetAllRules fetches all rules
 func (d *DB) GetAllRules(ctx context.Context) ([]models.Rule, error) {
-	rows, err := d.conn.Query(ctx, "SELECT id, name, conditions, actions, enabled FROM rules")
+	rows, err := d.pool.Query(ctx, "SELECT id, name, conditions, actions, enabled FROM rules")
 	if err != nil {
 		return nil, err
 	}

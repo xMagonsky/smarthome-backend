@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Rule: {{.Rule.Name}}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .rule-info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .test-form { border: 1px solid #ddd; padding: 20px; border-radius: 5px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .test-btn { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .test-btn:hover { background: #218838; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .actions { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; }
+        .action-item { margin: 5px 0; padding: 5px; background: white; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Test Rule: {{.Rule.Name}}</h1>
+
+    <div class="rule-info">
+        <h3>Rule Information</h3>
+        <p><strong>ID:</strong> {{.Rule.ID}}</p>
+        <p><strong>Enabled:</strong> {{if .Rule.Enabled}}Yes{{else}}No{{end}}</p>
+        <p><strong>Conditions:</strong> <code>{{.Rule.Conditions}}</code></p>
+        <p><strong>Actions:</strong> <code>{{.Rule.Actions}}</code></p>
+    </div>
+
+    <div class="test-form">
+        <h3>Test Conditions</h3>
+        <p>Enter test values to simulate device states:</p>
+
+        <form method="POST" action="/rules/test/{{.Rule.ID}}">
+            <div class="form-group">
+                <label for="temperature">Temperature (°C):</label>
+                <input type="number" step="0.1" id="temperature" name="temperature" placeholder="25.5">
+            </div>
+
+            <div class="form-group">
+                <label for="humidity">Humidity (%):</label>
+                <input type="number" step="0.1" id="humidity" name="humidity" placeholder="60.0">
+            </div>
+
+            <div class="form-group">
+                <label for="motion">Motion Detected (true/false):</label>
+                <input type="text" id="motion" name="motion" placeholder="true">
+            </div>
+
+            <div class="form-group">
+                <label for="light_level">Light Level (lux):</label>
+                <input type="number" id="light_level" name="light_level" placeholder="300">
+            </div>
+
+            <button type="submit" class="test-btn">Test Rule</button>
+        </form>
+    </div>
+
+    {{if .TestData}}
+    <div class="result {{if .TestResult}}success{{end}}">
+        <h3>Test Results</h3>
+        <p><strong>Test Data:</strong> {{.TestJSON}}</p>
+        <p><strong>Would Rule Trigger?</strong>
+            {{if .TestResult}}
+                <span style="color: green; font-weight: bold;">YES ✅</span>
+            {{else}}
+                <span style="color: red; font-weight: bold;">NO ❌</span>
+            {{end}}
+        </p>
+    </div>
+
+    {{if .Actions}}
+    <div class="actions">
+        <h3>Actions That Would Execute</h3>
+        {{range .Actions}}
+        <div class="action-item">
+            <strong>{{.Action}}</strong> on device <code>{{.DeviceID}}</code>
+            {{if .Params}}
+            <br><small>Params: <code>{{.Params}}</code></small>
+            {{end}}
+        </div>
+        {{else}}
+        <p>No actions defined.</p>
+        {{end}}
+    </div>
+    {{end}}
+    {{end}}
+
+    <br>
+    <a href="/rules">← Back to Rules</a> | <a href="/">Home</a>
+</body>
+</html>

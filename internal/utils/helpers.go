@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"math"
 	"strings"
 	"time"
@@ -24,22 +25,65 @@ func ParseDeviceID(topic string) string {
 
 // Compare compares values
 func Compare(actual interface{}, op string, expected interface{}) bool {
-	// Handle float64, time.Time, etc.
-	aFloat, aOk := actual.(float64)
-	eFloat, eOk := expected.(float64)
-	if aOk && eOk {
-		switch op {
-		case ">":
-			return aFloat > eFloat
-		case "<":
-			return aFloat < eFloat
-		case "==":
-			return aFloat == eFloat
-		case "!=":
-			return aFloat != eFloat
+	// Handle different type combinations
+	switch a := actual.(type) {
+	case float64:
+		if e, ok := expected.(float64); ok {
+			switch op {
+			case ">":
+				return a > e
+			case "<":
+				return a < e
+			case "==":
+				return a == e
+			case "!=":
+				return a != e
+			}
+		}
+	case string:
+		if e, ok := expected.(string); ok {
+			switch op {
+			case "==":
+				return a == e
+			case "!=":
+				return a != e
+			}
+		}
+	case bool:
+		if e, ok := expected.(bool); ok {
+			switch op {
+			case "==":
+				return a == e
+			case "!=":
+				return a != e
+			}
+		}
+	case time.Time:
+		if e, ok := expected.(string); ok {
+			// Parse expected time string (e.g., "18:00")
+			expectedTime, err := time.Parse("15:04", e)
+			if err != nil {
+				log.Printf("UTILS: Failed to parse time string %s: %v", e, err)
+				return false
+			}
+			// Compare only hours and minutes
+			actualTime := time.Date(0, 1, 1, a.Hour(), a.Minute(), 0, 0, time.UTC)
+			expectedTime = time.Date(0, 1, 1, expectedTime.Hour(), expectedTime.Minute(), 0, 0, time.UTC)
+
+			switch op {
+			case ">":
+				return actualTime.After(expectedTime)
+			case "<":
+				return actualTime.Before(expectedTime)
+			case "==":
+				return actualTime.Equal(expectedTime)
+			case "!=":
+				return !actualTime.Equal(expectedTime)
+			}
 		}
 	}
-	// Add more types
+
+	log.Printf("UTILS: Unsupported comparison: %T %s %T", actual, op, expected)
 	return false
 }
 

@@ -3,26 +3,27 @@ package db
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// DB wraps pgx.Conn for database operations
+// DB wraps pgxpool.Pool for database operations
 type DB struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
-// NewDB creates a new DB connection
+// NewDB creates a new DB connection pool
 func NewDB(url string) (*DB, error) {
-	conn, err := pgx.Connect(context.Background(), url)
+	pool, err := pgxpool.New(context.Background(), url)
 	if err != nil {
 		return nil, err
 	}
-	return &DB{conn: conn}, nil
+	return &DB{pool: pool}, nil
 }
 
-// Close closes the connection
+// Close closes the connection pool
 func (d *DB) Close(ctx context.Context) error {
-	return d.conn.Close(ctx)
+	d.pool.Close()
+	return nil
 }
 
 // Add query methods as needed, e.g., Exec, Query
