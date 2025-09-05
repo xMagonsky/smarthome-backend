@@ -17,7 +17,7 @@ import (
 	"smarthome/internal/utils"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 // Engine is the core control engine
@@ -165,6 +165,26 @@ func (e *Engine) processStreams() {
 				e.redisClient.Set(context.Background(), "last_read:"+stream.Stream, latest.ID, 0)
 				log.Printf("Updated last read ID for %s to %s", stream.Stream, latest.ID)
 			}
+
+			// delete device streams
+			// ----
+			if len(stream.Messages) > 0 {
+				var ids []string
+				for _, msg := range stream.Messages {
+					ids = append(ids, msg.ID)
+				}
+				e.redisClient.XDel(context.Background(), stream.Stream, ids...)
+				log.Printf("Deleted %d messages from stream %s", len(ids), stream.Stream)
+				e.redisClient.Do(context.Background(), "XTRIM", stream.Stream, "MAXLEN", 0)
+				log.Printf("Trimmed stream %s to 0 messages", stream.Stream)
+				len, err := e.redisClient.XLen(context.Background(), stream.Stream).Result()
+				log.Printf("Stream %s length after trim: %d (err: %v)", stream.Stream, len, err)
+				if err == nil && len == 0 {
+					e.redisClient.Del(context.Background(), stream.Stream)
+					log.Printf("Deleted empty stream %s", stream.Stream)
+				}
+			}
+			// ----
 		}
 	}
 }

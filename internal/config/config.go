@@ -12,6 +12,7 @@ type Config struct {
 	MQTTBroker   string `mapstructure:"MQTT_BROKER"`
 	MQTTClientID string `mapstructure:"MQTT_CLIENT_ID"`
 	LogLevel     string `mapstructure:"LOG_LEVEL"`
+	JWTSecret    string `mapstructure:"JWT_SECRET"`
 	// Add more fields as needed for expansion
 }
 
@@ -34,6 +35,7 @@ func LoadConfig() (*Config, error) {
 		MQTTBroker:   viper.GetString("MQTT_BROKER"),
 		MQTTClientID: viper.GetString("MQTT_CLIENT_ID"),
 		LogLevel:     viper.GetString("LOG_LEVEL"),
+		JWTSecret:    viper.GetString("JWT_SECRET"),
 	}
 	return cfg, nil
 }

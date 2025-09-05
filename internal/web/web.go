@@ -1,28 +1,28 @@
 package web
 
 import (
-	"smarthome/internal/db"
-	"smarthome/internal/services"
 	"smarthome/internal/web/api"
-	"smarthome/internal/web/view"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
-	redis "github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type WebServer struct {
 	router *gin.Engine
 }
 
-func NewWebServer(mqttClient MQTT.Client, dbConn *db.DB, redisClient *redis.Client) *WebServer {
+func NewWebServer(mqttClient MQTT.Client, dbConn *pgxpool.Pool, redisClient *redis.Client, JWTSecret string) *WebServer {
 	router := gin.Default()
 
-	pumpService := services.NewPumpService(mqttClient)
+	// pumpService := services.NewPumpService(mqttClient)
 
-	api.RegisterTestRoutes(router, api.Dependencies{PumpService: pumpService})
+	// api.RegisterTestRoutes(router, api.Dependencies{PumpService: pumpService})
 
-	view.RegisterTestRoutes(router, view.Dependencies{DBConn: dbConn, RedisClient: redisClient})
+	// view.RegisterTestRoutes(router, view.Dependencies{DBConn: dbConn, RedisClient: redisClient})
+
+	api.RegisterAuthRoutes(router, dbConn, redisClient, JWTSecret)
 
 	return &WebServer{router: router}
 }

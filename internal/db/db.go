@@ -26,4 +26,9 @@ func (d *DB) Close(ctx context.Context) error {
 	return nil
 }
 
+// Pool returns the underlying pgxpool.Pool
+func (d *DB) Pool() *pgxpool.Pool {
+	return d.pool
+}
+
 // Add query methods as needed, e.g., Exec, Query

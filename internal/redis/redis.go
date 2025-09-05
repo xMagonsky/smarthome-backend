@@ -1,6 +1,6 @@
 package redis
 
-import "github.com/go-redis/redis/v8"
+import "github.com/redis/go-redis/v9"
 
 // NewRedisClient creates a Redis client
 func NewRedisClient(addr string) *redis.Client {
