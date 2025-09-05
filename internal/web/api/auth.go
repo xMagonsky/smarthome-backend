@@ -2,19 +2,17 @@ package api
 
 import (
 	"smarthome/auth"
+	"smarthome/internal/web/middleware"
+	"smarthome/internal/web/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 )
 
-func RegisterAuthRoutes(router *gin.Engine, dbConn *pgxpool.Pool, redisClient *redis.Client, JWTSecret string) {
-	authModule := auth.NewAuthModule(dbConn, redisClient, JWTSecret)
-
+func RegisterAuthRoutes(router *gin.Engine, authModule *auth.AuthModule, middlewareManager *middleware.MiddlewareManager) {
 	r := router.Group("/auth")
 	{
 		r.POST("/login", func(c *gin.Context) {
-			var loginRequest LoginRequest
+			var loginRequest models.LoginRequest
 			if err := c.ShouldBindJSON(&loginRequest); err != nil {
 				c.JSON(400, gin.H{"error": "Invalid request"})
 				return
@@ -27,7 +25,7 @@ func RegisterAuthRoutes(router *gin.Engine, dbConn *pgxpool.Pool, redisClient *r
 			c.JSON(200, gin.H{"token": token})
 		})
 		r.POST("/register", func(c *gin.Context) {
-			var registerRequest RegisterRequest
+			var registerRequest models.RegisterRequest
 			if err := c.ShouldBindJSON(&registerRequest); err != nil {
 				c.JSON(400, gin.H{"error": "Invalid request"})
 				return

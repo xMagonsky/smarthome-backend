@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"smarthome/internal/db"
-	//"smarthome/internal/mqtt"  // Import to use mqtt package
-	//"smarthome/internal/redis" // Import to use redis package
 	"smarthome/internal/models"
 	"smarthome/internal/scheduler"
 	"smarthome/internal/taskqueue"
@@ -120,10 +118,10 @@ func (e *Engine) processStreams() {
 			continue
 		}
 
-		log.Printf("Found %d device streams: %v", len(keys), keys)
+		// log.Printf("Found %d device streams: %v", len(keys), keys)
 
 		if len(keys) == 0 {
-			log.Println("No streams found, sleeping...")
+			// log.Println("No streams found, sleeping...")
 			time.Sleep(utils.DebounceWindow)
 			continue
 		}
