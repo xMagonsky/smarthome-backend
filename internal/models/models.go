@@ -37,6 +37,7 @@ type Rule struct {
 	Conditions json.RawMessage `json:"conditions"`
 	Actions    json.RawMessage `json:"actions"`
 	Enabled    bool            `json:"enabled"`
+	OwnerID    string          `json:"owner_id"`
 }
 
 // Schedule represents a schedule model

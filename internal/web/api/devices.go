@@ -35,5 +35,21 @@ func RegisterDeviceRoutes(r *gin.Engine, middleware *middleware.MiddlewareManage
 
 			c.JSON(200, devices)
 		})
+
+		devices.PATCH("/:id/setowner", func(c *gin.Context) {
+			deviceID := c.Param("id")
+			newOwnerID := c.GetString("user_id")
+
+			commandTag, err := dbConn.Exec(c, "UPDATE devices SET owner_id=$1 WHERE id=$2", newOwnerID, deviceID)
+			if err != nil {
+				c.JSON(500, gin.H{"error": "Failed to update device owner"})
+				return
+			}
+			if commandTag.RowsAffected() == 0 {
+				c.JSON(404, gin.H{"error": "Device not found"})
+				return
+			}
+			c.JSON(200, gin.H{"status": "Owner updated successfully"})
+		})
 	}
 }

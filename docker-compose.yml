@@ -26,4 +26,4 @@ services:
       - redis
       - emqx
     env_file:
-      - .env
+      - .example.env

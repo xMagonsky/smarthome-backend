@@ -25,6 +25,7 @@ func NewWebServer(mqttClient MQTT.Client, dbConn *pgxpool.Pool, redisClient *red
 	// api.RegisterTestRoutes(router, api.Dependencies{PumpService: pumpService})
 	api.RegisterAuthRoutes(router, authModule, middlewareManager)
 	api.RegisterDeviceRoutes(router, middlewareManager, dbConn)
+	api.RegisterAutomationRoutes(router, middlewareManager, dbConn)
 
 	// view.RegisterTestRoutes(router, view.Dependencies{DBConn: dbConn, RedisClient: redisClient})
 
