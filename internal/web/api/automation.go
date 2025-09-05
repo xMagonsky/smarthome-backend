@@ -24,7 +24,7 @@ func RegisterAutomationRoutes(r *gin.Engine, middleware *middleware.MiddlewareMa
 			}
 			defer rows.Close()
 
-			var automations []models.Rule
+			automations := []models.Rule{}
 			for rows.Next() {
 				var a models.Rule
 				if err := rows.Scan(&a.ID, &a.Name, &a.Conditions, &a.Actions, &a.Enabled, &a.OwnerID); err != nil {
