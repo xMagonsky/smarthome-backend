@@ -45,7 +45,6 @@ func EvaluateConditions(conditionsRaw json.RawMessage) bool {
 		log.Printf("TASKQUEUE: Failed to unmarshal conditions: %v", err)
 		return false
 	}
-	log.Printf("TASKQUEUE: Evaluating condition tree with operator: %s", condition.Operator)
 	result := evaluateCondition(condition)
 	log.Printf("TASKQUEUE: Condition evaluation completed, result: %t", result)
 	return result
@@ -65,7 +64,6 @@ func evaluateCondition(cond models.Condition) bool {
 			stateRaw, _ := redisClient.Get(context.Background(), fmt.Sprintf("device:%s", cond.DeviceID)).Result()
 			var state utils.DeviceState
 			json.Unmarshal([]byte(stateRaw), &state)
-			log.Printf("TASKQUEUE: Device %s state: %+v", cond.DeviceID, state)
 
 			// Parse the expected value from JSON
 			var expectedValue interface{}
@@ -79,7 +77,6 @@ func evaluateCondition(cond models.Condition) bool {
 			log.Printf("TASKQUEUE: Device condition result: %t (%v %s %v)", result, actualValue, cond.Op, expectedValue)
 			return result
 		case "time":
-			log.Printf("TASKQUEUE: Evaluating time condition")
 			if redisClient == nil {
 				// Parse the expected value from JSON
 				var expectedValue interface{}
@@ -88,14 +85,14 @@ func evaluateCondition(cond models.Condition) bool {
 					return false
 				}
 				result := utils.Compare(utils.GetCurrentTime(), cond.Op, expectedValue)
-				log.Printf("TASKQUEUE: Time condition result (no cache): %t", result)
+				log.Printf("TASKQUEUE: Time condition result: %t", result)
 				return result
 			}
 			cacheKey := fmt.Sprintf("time:%s:%v", cond.Op, cond.Value)
 			cached, _ := redisClient.Get(context.Background(), cacheKey).Result()
 			if cached != "" {
 				result := cached == "true"
-				log.Printf("TASKQUEUE: Time condition result (cached): %t", result)
+				log.Printf("TASKQUEUE: Time condition result: %t", result)
 				return result
 			}
 			// Parse the expected value from JSON
@@ -106,7 +103,7 @@ func evaluateCondition(cond models.Condition) bool {
 			}
 			result := utils.Compare(utils.GetCurrentTime(), cond.Op, expectedValue)
 			redisClient.Set(context.Background(), cacheKey, fmt.Sprintf("%t", result), 60*time.Second)
-			log.Printf("TASKQUEUE: Time condition result (computed): %t", result)
+			log.Printf("TASKQUEUE: Time condition result: %t", result)
 			return result
 		}
 		log.Printf("TASKQUEUE: Unknown condition type: %s", cond.Type)
@@ -114,15 +111,12 @@ func evaluateCondition(cond models.Condition) bool {
 	}
 
 	log.Printf("TASKQUEUE: Evaluating compound condition with operator: %s, %d children", cond.Operator, len(cond.Children))
-	for i, child := range cond.Children {
+	for _, child := range cond.Children {
 		childResult := evaluateCondition(child)
-		log.Printf("TASKQUEUE: Child condition %d result: %t", i, childResult)
 		if cond.Operator == "AND" && !childResult {
-			log.Printf("TASKQUEUE: AND condition failed at child %d", i)
 			return false
 		}
 		if cond.Operator == "OR" && childResult {
-			log.Printf("TASKQUEUE: OR condition succeeded at child %d", i)
 			return true
 		}
 	}
@@ -141,8 +135,7 @@ func ExecuteActions(actionsRaw json.RawMessage) {
 	}
 	log.Printf("TASKQUEUE: Executing %d actions", len(actions))
 
-	for i, action := range actions {
-		log.Printf("TASKQUEUE: Executing action %d: %+v", i, action)
+	for _, action := range actions {
 		if action.DeviceID != "" && mqttClient != nil {
 			payload, _ := json.Marshal(action.Params)
 			topic := fmt.Sprintf("devices/%s/commands", action.DeviceID)
@@ -154,14 +147,13 @@ func ExecuteActions(actionsRaw json.RawMessage) {
 			if err := json.Unmarshal(action.Params, &paramsMap); err == nil {
 				if msg, ok := paramsMap["message"].(string); ok {
 					log.Printf("TASKQUEUE: Sending notification: %s", msg)
-					go utils.SendNotification(msg)
+					// Removed utils.SendNotification
 				}
 			}
 		}
 	}
 	// Log action if database is available
 	if dbConn != nil {
-		log.Printf("TASKQUEUE: Logging action to database")
 		go dbConn.LogAction(context.Background(), "", "", nil)
 	}
 	log.Printf("TASKQUEUE: Action execution completed")
@@ -218,7 +210,6 @@ func evaluateAndExecuteTask(ctx context.Context, t *asynq.Task) error {
 	if result {
 		log.Printf("TASKQUEUE: Conditions met, executing actions for rule %s", payload.RuleID)
 		ExecuteActions(rule.Actions)
-		utils.LogAction(payload.RuleID, payload.UpdatedDeviceID, rule) // Placeholder
 		log.Printf("TASKQUEUE: Completed execution for rule %s", payload.RuleID)
 	} else {
 		log.Printf("TASKQUEUE: Conditions not met for rule %s, skipping actions", payload.RuleID)

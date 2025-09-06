@@ -14,7 +14,6 @@ import (
 	"smarthome/internal/redis"
 	"smarthome/internal/scheduler"
 	"smarthome/internal/taskqueue"
-	"smarthome/internal/utils"
 	"smarthome/internal/web"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
@@ -40,8 +39,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
-
-	utils.InitLogging(cfg.LogLevel)
 
 	dbConn, err := db.NewDB(cfg.DBURL)
 	if err != nil {
