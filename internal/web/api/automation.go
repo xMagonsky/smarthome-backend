@@ -51,7 +51,17 @@ func RegisterAutomationRoutes(r *gin.Engine, middleware *middleware.MiddlewareMa
 				c.JSON(500, gin.H{"error": "Failed to create rule"})
 				return
 			}
-			c.JSON(201, gin.H{"status": "Rule created successfully"})
+
+			var createdRule models.Rule
+			err = dbConn.QueryRow(c, "SELECT id, name, conditions, actions, enabled, owner_id FROM rules WHERE name=$1 AND owner_id=$2 ORDER BY id DESC LIMIT 1",
+				newRuleReq.Name, userID).Scan(&createdRule.ID, &createdRule.Name, &createdRule.Conditions, &createdRule.Actions, &createdRule.Enabled, &createdRule.OwnerID)
+			if err != nil {
+				println("Error fetching created rule:", err.Error())
+				c.JSON(500, gin.H{"error": "Failed to fetch created rule"})
+				return
+			}
+
+			c.JSON(201, createdRule)
 		})
 
 		automations.DELETE("/rules/:id", func(c *gin.Context) {
@@ -69,20 +79,44 @@ func RegisterAutomationRoutes(r *gin.Engine, middleware *middleware.MiddlewareMa
 		automations.PATCH("/rules/:id", func(c *gin.Context) {
 			userID := c.GetString("user_id")
 			ruleID := c.Param("id")
-			var updateRuleReq webModels.AddRuleRequest
+			var updateRuleReq webModels.UpdateRuleRequest
 			if err := c.ShouldBindJSON(&updateRuleReq); err != nil {
 				println("Error binding JSON:", err.Error())
 				c.JSON(400, gin.H{"error": "Invalid request"})
 				return
 			}
+
+			// First get the existing rule
+			var existingRule models.Rule
+			row := dbConn.QueryRow(c, "SELECT id, name, conditions, actions, enabled, owner_id FROM rules WHERE id=$1 AND owner_id=$2", ruleID, userID)
+			if err := row.Scan(&existingRule.ID, &existingRule.Name, &existingRule.Conditions, &existingRule.Actions, &existingRule.Enabled, &existingRule.OwnerID); err != nil {
+				println("Error fetching existing rule:", err.Error())
+				c.JSON(404, gin.H{"error": "Rule not found"})
+				return
+			}
+
+			// Update only the fields that were provided
+			if updateRuleReq.Name != nil {
+				existingRule.Name = *updateRuleReq.Name
+			}
+			if updateRuleReq.Conditions != nil {
+				existingRule.Conditions = *updateRuleReq.Conditions
+			}
+			if updateRuleReq.Actions != nil {
+				existingRule.Actions = *updateRuleReq.Actions
+			}
+			if updateRuleReq.Enabled != nil {
+				existingRule.Enabled = *updateRuleReq.Enabled
+			}
+
 			_, err := dbConn.Exec(c, "UPDATE rules SET name=$1, conditions=$2, actions=$3, enabled=$4 WHERE id=$5 AND owner_id=$6",
-				updateRuleReq.Name, updateRuleReq.Conditions, updateRuleReq.Actions, updateRuleReq.Enabled, ruleID, userID)
+				existingRule.Name, existingRule.Conditions, existingRule.Actions, existingRule.Enabled, existingRule.ID, existingRule.OwnerID)
 			if err != nil {
 				println("Error updating rule:", err.Error())
 				c.JSON(500, gin.H{"error": "Failed to update rule"})
 				return
 			}
-			c.JSON(200, gin.H{"status": "Rule updated successfully"})
+			c.JSON(200, existingRule)
 		})
 	}
 }

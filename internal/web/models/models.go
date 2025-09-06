@@ -19,3 +19,10 @@ type AddRuleRequest struct {
 	Actions    json.RawMessage `json:"actions"`
 	Enabled    bool            `json:"enabled"`
 }
+
+type UpdateRuleRequest struct {
+	Name       *string          `json:"name,omitempty"`
+	Conditions *json.RawMessage `json:"conditions,omitempty"`
+	Actions    *json.RawMessage `json:"actions,omitempty"`
+	Enabled    *bool            `json:"enabled,omitempty"`
+}

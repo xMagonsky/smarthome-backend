@@ -23,7 +23,7 @@ func RegisterDeviceRoutes(r *gin.Engine, middleware *middleware.MiddlewareManage
 			}
 			defer rows.Close()
 
-			var devices []models.Device
+			devices := []models.Device{}
 			for rows.Next() {
 				var device models.Device
 				if err := rows.Scan(&device.ID, &device.Name, &device.Type, &device.State, &device.MQTTTopic); err != nil {
