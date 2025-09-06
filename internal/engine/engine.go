@@ -326,3 +326,121 @@ func (e *Engine) extractDeviceIDsFromConditions(conditions []models.Condition) [
 
 	return result
 }
+
+// RefreshRuleAssociations refreshes device-rule associations for a specific rule
+func (e *Engine) RefreshRuleAssociations(ruleID string) error {
+	log.Printf("Refreshing associations for rule %s", ruleID)
+
+	// Get the rule from database
+	rule, err := e.db.GetRuleByID(context.Background(), ruleID)
+	if err != nil {
+		log.Printf("Error fetching rule %s for refresh: %v", ruleID, err)
+		return err
+	}
+
+	// Remove this rule from all existing device associations
+	keys, err := e.redisClient.Keys(context.Background(), "device:*:rules").Result()
+	if err != nil {
+		log.Printf("Error getting device rule keys: %v", err)
+		return err
+	}
+
+	for _, key := range keys {
+		e.redisClient.SRem(context.Background(), key, ruleID)
+	}
+
+	// If rule is enabled, add new associations
+	if rule.Enabled {
+		// Parse conditions to find referenced devices
+		var condition models.Condition
+		if err := json.Unmarshal(rule.Conditions, &condition); err != nil {
+			log.Printf("Error parsing conditions for rule %s: %v", rule.ID, err)
+			return err
+		}
+
+		// Extract device IDs from the condition tree
+		deviceIDs := e.extractDeviceIDsFromConditionTree(condition)
+
+		// Add rule to each device's rule set
+		for _, deviceID := range deviceIDs {
+			key := fmt.Sprintf("device:%s:rules", deviceID)
+			e.redisClient.SAdd(context.Background(), key, rule.ID)
+			log.Printf("Associated rule %s with device %s", rule.ID, deviceID)
+		}
+
+		// Refresh schedules for this rule
+		e.refreshSchedulesForRule(ruleID)
+	}
+
+	log.Printf("Successfully refreshed associations for rule %s", ruleID)
+	return nil
+}
+
+// RemoveRuleAssociations removes all associations for a rule
+func (e *Engine) RemoveRuleAssociations(ruleID string) error {
+	log.Printf("Removing associations for rule %s", ruleID)
+
+	// Remove this rule from all device associations
+	keys, err := e.redisClient.Keys(context.Background(), "device:*:rules").Result()
+	if err != nil {
+		log.Printf("Error getting device rule keys: %v", err)
+		return err
+	}
+
+	for _, key := range keys {
+		e.redisClient.SRem(context.Background(), key, ruleID)
+	}
+
+	// Remove schedules for this rule
+	e.removeSchedulesForRule(ruleID)
+
+	log.Printf("Successfully removed associations for rule %s", ruleID)
+	return nil
+}
+
+// refreshSchedulesForRule refreshes schedules for a specific rule
+func (e *Engine) refreshSchedulesForRule(ruleID string) {
+	log.Printf("Refreshing schedules for rule %s", ruleID)
+
+	// Remove existing schedules for this rule (simplified - in a real implementation you'd want more sophisticated schedule management)
+	e.removeSchedulesForRule(ruleID)
+
+	// Get schedules for this rule
+	schedules, err := e.db.GetSchedulesByRuleID(context.Background(), ruleID)
+	if err != nil {
+		log.Printf("Error getting schedules for rule %s: %v", ruleID, err)
+		return
+	}
+
+	// Add enabled schedules
+	for _, s := range schedules {
+		if s.Enabled {
+			capturedRuleID := s.RuleID // capture loop variable
+			log.Printf("Adding schedule for rule %s with cron %s", capturedRuleID, s.CronExpression)
+			e.scheduler.AddJob(s.CronExpression, func() {
+				go e.handleScheduleTrigger(capturedRuleID)
+			})
+		}
+	}
+}
+
+// removeSchedulesForRule removes schedules for a specific rule
+func (e *Engine) removeSchedulesForRule(ruleID string) {
+	// Note: This is a simplified implementation. In a real system, you'd want to maintain
+	// a mapping of rule IDs to schedule job IDs to properly remove them from the scheduler
+	log.Printf("Removing schedules for rule %s (simplified implementation)", ruleID)
+	// For now, this is a placeholder - you'd need to enhance the scheduler
+	// to support removing specific jobs by rule ID
+}
+
+// RefreshAllRuleAssociations refreshes all device-rule associations
+func (e *Engine) RefreshAllRuleAssociations() error {
+	log.Println("Refreshing all rule associations")
+	return e.populateDeviceRuleAssociations()
+}
+
+// TriggerRuleEvaluation triggers immediate evaluation of a rule
+func (e *Engine) TriggerRuleEvaluation(ruleID string) {
+	log.Printf("Triggering immediate evaluation for rule %s", ruleID)
+	taskqueue.EnqueueEvaluation(ruleID, "")
+}

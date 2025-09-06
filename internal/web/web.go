@@ -11,11 +11,18 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// EngineInterface defines the methods needed from the engine
+type EngineInterface interface {
+	RefreshRuleAssociations(ruleID string) error
+	RemoveRuleAssociations(ruleID string) error
+	TriggerRuleEvaluation(ruleID string)
+}
+
 type WebServer struct {
 	router *gin.Engine
 }
 
-func NewWebServer(mqttClient MQTT.Client, dbConn *pgxpool.Pool, redisClient *redis.Client, JWTSecret string) *WebServer {
+func NewWebServer(mqttClient MQTT.Client, dbConn *pgxpool.Pool, redisClient *redis.Client, JWTSecret string, engine EngineInterface) *WebServer {
 	router := gin.Default()
 
 	authModule := auth.NewAuthModule(dbConn, redisClient, JWTSecret)
@@ -25,7 +32,7 @@ func NewWebServer(mqttClient MQTT.Client, dbConn *pgxpool.Pool, redisClient *red
 	// api.RegisterTestRoutes(router, api.Dependencies{PumpService: pumpService})
 	api.RegisterAuthRoutes(router, authModule, middlewareManager)
 	api.RegisterDeviceRoutes(router, middlewareManager, dbConn)
-	api.RegisterAutomationRoutes(router, middlewareManager, dbConn)
+	api.RegisterAutomationRoutes(router, middlewareManager, dbConn, engine)
 
 	// view.RegisterTestRoutes(router, view.Dependencies{DBConn: dbConn, RedisClient: redisClient})
 

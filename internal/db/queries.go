@@ -67,3 +67,22 @@ func (d *DB) GetAllRules(ctx context.Context) ([]models.Rule, error) {
 	}
 	return rules, nil
 }
+
+// GetSchedulesByRuleID fetches schedules for a specific rule
+func (d *DB) GetSchedulesByRuleID(ctx context.Context, ruleID string) ([]models.Schedule, error) {
+	rows, err := d.pool.Query(ctx, "SELECT id, rule_id, cron_expression, enabled FROM schedules WHERE rule_id = $1", ruleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var schedules []models.Schedule
+	for rows.Next() {
+		var s models.Schedule
+		if err := rows.Scan(&s.ID, &s.RuleID, &s.CronExpression, &s.Enabled); err != nil {
+			return nil, err
+		}
+		schedules = append(schedules, s)
+	}
+	return schedules, nil
+}

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"smarthome/internal/models"
 	"smarthome/internal/web/middleware"
 	webModels "smarthome/internal/web/models"
@@ -9,7 +10,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func RegisterAutomationRoutes(r *gin.Engine, middleware *middleware.MiddlewareManager, dbConn *pgxpool.Pool) {
+// EngineInterface defines the methods needed from the engine
+type EngineInterface interface {
+	RefreshRuleAssociations(ruleID string) error
+	RemoveRuleAssociations(ruleID string) error
+	TriggerRuleEvaluation(ruleID string)
+}
+
+func RegisterAutomationRoutes(r *gin.Engine, middleware *middleware.MiddlewareManager, dbConn *pgxpool.Pool, engine EngineInterface) {
 	automations := r.Group("/automations")
 	automations.Use(middleware.RequireAuth())
 	{
@@ -61,12 +69,34 @@ func RegisterAutomationRoutes(r *gin.Engine, middleware *middleware.MiddlewareMa
 				return
 			}
 
+			// Refresh engine associations for the new rule
+			if err := engine.RefreshRuleAssociations(createdRule.ID); err != nil {
+				log.Printf("Error refreshing rule associations for rule %s: %v", createdRule.ID, err)
+				// Don't fail the request, just log the error
+			} else {
+				log.Printf("Successfully refreshed rule associations for new rule %s", createdRule.ID)
+				// Trigger immediate evaluation of the new rule if it's enabled
+				if createdRule.Enabled {
+					engine.TriggerRuleEvaluation(createdRule.ID)
+					log.Printf("Triggered immediate evaluation for new rule %s", createdRule.ID)
+				}
+			}
+
 			c.JSON(201, createdRule)
 		})
 
 		automations.DELETE("/rules/:id", func(c *gin.Context) {
 			userID := c.GetString("user_id")
 			ruleID := c.Param("id")
+
+			// Remove engine associations before deleting the rule
+			if err := engine.RemoveRuleAssociations(ruleID); err != nil {
+				log.Printf("Error removing rule associations for rule %s: %v", ruleID, err)
+				// Don't fail the request, just log the error
+			} else {
+				log.Printf("Successfully removed rule associations for rule %s", ruleID)
+			}
+
 			_, err := dbConn.Exec(c, "DELETE FROM rules WHERE id=$1 AND owner_id=$2", ruleID, userID)
 			if err != nil {
 				println("Error deleting rule:", err.Error())
@@ -116,6 +146,20 @@ func RegisterAutomationRoutes(r *gin.Engine, middleware *middleware.MiddlewareMa
 				c.JSON(500, gin.H{"error": "Failed to update rule"})
 				return
 			}
+
+			// Refresh engine associations for the updated rule
+			if err := engine.RefreshRuleAssociations(existingRule.ID); err != nil {
+				log.Printf("Error refreshing rule associations for rule %s: %v", existingRule.ID, err)
+				// Don't fail the request, just log the error
+			} else {
+				log.Printf("Successfully refreshed rule associations for updated rule %s", existingRule.ID)
+				// Trigger immediate evaluation of the updated rule if it's enabled
+				if existingRule.Enabled {
+					engine.TriggerRuleEvaluation(existingRule.ID)
+					log.Printf("Triggered immediate evaluation for updated rule %s", existingRule.ID)
+				}
+			}
+
 			c.JSON(200, existingRule)
 		})
 	}

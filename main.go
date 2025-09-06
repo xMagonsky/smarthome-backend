@@ -63,14 +63,15 @@ func main() {
 	sched := scheduler.NewScheduler(dbConn)
 	sched.Start()
 
-	webServer := web.NewWebServer(mqttClient, dbConn.Pool(), redisClient, cfg.JWTSecret)
-	go webServer.Start(":5069")
-
-	// Initialize engine
+	// Initialize engine first
 	eng := engine.NewEngine(mqttClient, redisClient, dbConn, sched)
 	if err := eng.Start(); err != nil {
 		log.Fatalf("Failed to start engine: %v", err)
 	}
+
+	// Pass engine to web server so it can notify about rule changes
+	webServer := web.NewWebServer(mqttClient, dbConn.Pool(), redisClient, cfg.JWTSecret, eng)
+	go webServer.Start(":5069")
 
 	// Graceful shutdown
 	sigChan := make(chan os.Signal, 1)
