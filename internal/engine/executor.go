@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"smarthome/internal/models"
-	"smarthome/internal/utils"
 )
 
 // ExecuteActions executes rule actions
@@ -20,7 +19,8 @@ func (e *Engine) ExecuteActions(actions []models.Action) {
 			var paramsMap map[string]interface{}
 			if err := json.Unmarshal(action.Params, &paramsMap); err == nil {
 				if msg, ok := paramsMap["message"].(string); ok {
-					go utils.SendNotification(msg)
+					// Removed utils.SendNotification, logging instead
+					fmt.Printf("ENGINE: Sending notification: %s\n", msg)
 				}
 			}
 		}
