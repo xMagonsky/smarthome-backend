@@ -27,3 +27,5 @@ services:
       - emqx
     env_file:
       - .example.env
+    ports:
+      - "5069:5069"

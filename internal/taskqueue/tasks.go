@@ -202,6 +202,60 @@ func evaluateAndExecuteTask(ctx context.Context, t *asynq.Task) error {
 		return nil
 	}
 
+	// Pre-evaluation check: if the target device is already in the desired state, skip evaluation.
+	var actions []models.Action
+	if err := json.Unmarshal(rule.Actions, &actions); err != nil {
+		log.Printf("TASKQUEUE: Failed to unmarshal actions for pre-check: %v", err)
+	} else {
+		allActionsRedundant := true
+		for _, action := range actions {
+			if action.DeviceID != "" {
+				var desiredState map[string]interface{}
+				if err := json.Unmarshal(action.Params, &desiredState); err != nil {
+					allActionsRedundant = false // Cannot determine state, so must evaluate
+					break
+				}
+
+				stateRaw, err := redisClient.Get(context.Background(), fmt.Sprintf("device:%s", action.DeviceID)).Result()
+				if err != nil && err != redis.Nil {
+					allActionsRedundant = false // Error getting state, so must evaluate
+					break
+				}
+
+				var currentState utils.DeviceState
+				if stateRaw != "" {
+					json.Unmarshal([]byte(stateRaw), &currentState)
+				}
+
+				actionIsRedundant := true
+				if currentState == nil {
+					actionIsRedundant = false
+				} else {
+					for key, desiredValue := range desiredState {
+						if currentValue, ok := currentState[key]; !ok || !utils.Compare(currentValue, "==", desiredValue) {
+							actionIsRedundant = false
+							break
+						}
+					}
+				}
+
+				if !actionIsRedundant {
+					allActionsRedundant = false
+					break
+				}
+			} else {
+				// For non-device actions, we can't know if they are redundant, so we must evaluate.
+				allActionsRedundant = false
+				break
+			}
+		}
+
+		if allActionsRedundant && len(actions) > 0 {
+			log.Printf("TASKQUEUE: All actions for rule %s are redundant. Skipping evaluation.", payload.RuleID)
+			return nil
+		}
+	}
+
 	// Evaluate conditions
 	log.Printf("TASKQUEUE: Evaluating conditions for rule %s", payload.RuleID)
 	result := EvaluateConditions(rule.Conditions)
