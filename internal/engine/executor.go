@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -26,7 +25,7 @@ func (e *Engine) ExecuteActions(actions []models.Action) {
 		}
 		// Add logging or metrics here for expansion
 	}
-	go e.db.LogAction(context.Background() /* ruleID */, "" /* deviceID */, "" /* state */, nil) // Placeholder
+	//go e.db.LogAction(context.Background() /* ruleID */, "" /* deviceID */, "" /* state */, nil) // Placeholder
 }
 
 // Expand with more action types (e.g., API calls, integrations)

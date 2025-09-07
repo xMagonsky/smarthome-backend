@@ -154,7 +154,7 @@ func ExecuteActions(actionsRaw json.RawMessage) {
 	}
 	// Log action if database is available
 	if dbConn != nil {
-		go dbConn.LogAction(context.Background(), "", "", nil)
+		//go dbConn.LogAction(context.Background(), "", "", nil)
 	}
 	log.Printf("TASKQUEUE: Action execution completed")
 }
