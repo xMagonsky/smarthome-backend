@@ -39,4 +39,4 @@ This repository contains the backend implementation for a SmartHome system, desi
    ```
 
 ## API Endpoints
-
+[Swagger-type documentation](https://github.com/xMagonsky/smarthome-backend/blob/main/swagger.yaml)
