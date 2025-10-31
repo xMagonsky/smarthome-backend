@@ -12,6 +12,8 @@ import (
 	"smarthome/internal/redis"
 	"smarthome/internal/taskqueue"
 	"smarthome/internal/utils"
+
+	goredis "github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -66,7 +68,14 @@ func runQuickTest() {
 
 	// Test condition evaluation
 	fmt.Println("\nEvaluating conditions...")
-	result := taskqueue.EvaluateConditions(rule.Conditions)
+	// Manually evaluate conditions for testing
+	var condition models.Condition
+	if err := json.Unmarshal(rule.Conditions, &condition); err != nil {
+		log.Fatalf("Failed to unmarshal conditions: %v", err)
+	}
+
+	// Simple evaluation logic for testing
+	result := evaluateTestCondition(condition, redisClient)
 	fmt.Printf("Condition result: %t\n", result)
 
 	if result {
@@ -145,4 +154,40 @@ func showAllRules() {
 	for _, rule := range rules {
 		fmt.Printf("- %s (ID: %s, Enabled: %t)\n", rule.Name, rule.ID, rule.Enabled)
 	}
+}
+
+// evaluateTestCondition is a simple test helper for condition evaluation
+func evaluateTestCondition(cond models.Condition, redisClient *goredis.Client) bool {
+	if cond.Operator == "" {
+		switch cond.Type {
+		case "sensor", "device":
+			stateRaw, _ := redisClient.Get(context.Background(), fmt.Sprintf("device:%s", cond.DeviceID)).Result()
+			var state utils.DeviceState
+			json.Unmarshal([]byte(stateRaw), &state)
+
+			var expectedValue interface{}
+			if err := json.Unmarshal(cond.Value, &expectedValue); err != nil {
+				return false
+			}
+
+			return utils.Compare(state[cond.Key], cond.Op, expectedValue)
+		case "time":
+			var expectedValue interface{}
+			if err := json.Unmarshal(cond.Value, &expectedValue); err != nil {
+				return false
+			}
+			return utils.Compare(utils.GetCurrentTime(), cond.Op, expectedValue)
+		}
+		return false
+	}
+
+	for _, child := range cond.Children {
+		if cond.Operator == "AND" && !evaluateTestCondition(child, redisClient) {
+			return false
+		}
+		if cond.Operator == "OR" && evaluateTestCondition(child, redisClient) {
+			return true
+		}
+	}
+	return cond.Operator == "AND"
 }

@@ -16,6 +16,7 @@ var (
 func StartWorkers(redisAddr string) {
 	log.Printf("TASKQUEUE: Starting Asynq workers with Redis at %s", redisAddr)
 	asynqClient = asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
+	asynqMux.HandleFunc("device_update", processDeviceUpdateTask)
 	asynqMux.HandleFunc("evaluate_rule", evaluateAndExecuteTask)
 	asynqSrv = asynq.NewServer(asynq.RedisClientOpt{Addr: redisAddr}, asynq.Config{Concurrency: 10})
 	log.Printf("TASKQUEUE: Workers started, waiting for tasks...")

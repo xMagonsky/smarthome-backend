@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	"smarthome/internal/automation"
 	"smarthome/internal/models"
 	"smarthome/internal/utils"
 )
 
-// EvaluateConditions evaluates rule conditions recursively
+// EvaluateConditions evaluates rule conditions recursively (wrapper for Engine)
 func (e *Engine) EvaluateConditions(cond models.Condition) bool {
 	if cond.Operator == "" {
 		switch cond.Type {
@@ -41,6 +42,11 @@ func (e *Engine) EvaluateConditions(cond models.Condition) bool {
 		}
 	}
 	return cond.Operator == "AND"
+}
+
+// EvaluateConditionsStatic is a convenience wrapper for automation.EvaluateConditions
+func (e *Engine) EvaluateConditionsStatic(conditionsRaw json.RawMessage) bool {
+	return automation.EvaluateConditions(e.redisClient, conditionsRaw)
 }
 
 // Expand with support for more condition types (e.g., ML-based)

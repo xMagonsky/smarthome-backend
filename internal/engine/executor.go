@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"smarthome/internal/automation"
 	"smarthome/internal/models"
 )
 
-// ExecuteActions executes rule actions
+// ExecuteActions executes rule actions (wrapper for Engine)
 func (e *Engine) ExecuteActions(actions []models.Action) {
 	for _, action := range actions {
 		if action.DeviceID != "" {
@@ -26,6 +27,11 @@ func (e *Engine) ExecuteActions(actions []models.Action) {
 		// Add logging or metrics here for expansion
 	}
 	//go e.db.LogAction(context.Background() /* ruleID */, "" /* deviceID */, "" /* state */, nil) // Placeholder
+}
+
+// ExecuteActionsStatic is a convenience wrapper for automation.ExecuteActions
+func (e *Engine) ExecuteActionsStatic(actionsRaw json.RawMessage) {
+	automation.ExecuteActions(e.mqttClient, actionsRaw)
 }
 
 // Expand with more action types (e.g., API calls, integrations)
