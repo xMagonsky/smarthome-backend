@@ -97,7 +97,6 @@ func (e *Engine) onDeviceUpdate(client mqtt.Client, msg mqtt.Message) {
 
 // handleScheduleTrigger is called when a schedule is triggered
 func (e *Engine) handleScheduleTrigger(ruleID string) {
-	// Move the EnqueueEvaluation logic here to avoid import cycle
 	taskqueue.EnqueueEvaluation(ruleID, "")
 }
 
