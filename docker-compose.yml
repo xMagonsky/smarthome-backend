@@ -11,20 +11,18 @@ services:
     image: redis:7
     ports:
       - "6379:6379"
-  emqx:
-    image: emqx/emqx:latest
+  mosquitto:
+    image: eclipse-mosquitto:latest
     ports:
       - "1883:1883"
-      - "18083:18083"
-    environment:
-      EMQX_ALLOW_ANONYMOUS: "yes"
-      EMQX_ACL_NOMATCH: "allow"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
   engine:
     build: .
     depends_on:
       - postgres
       - redis
-      - emqx
+      - mosquitto
     env_file:
       - .example.env
     ports:

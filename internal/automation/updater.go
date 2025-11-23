@@ -15,8 +15,6 @@ import (
 
 // ProcessDeviceUpdate handles device state updates and returns rule IDs to evaluate
 func ProcessDeviceUpdate(ctx context.Context, redisClient *redis.Client, dbConn *db.DB, deviceID string, newState utils.DeviceState) ([]string, error) {
-	log.Printf("AUTOMATION: Processing device update for %s", deviceID)
-
 	// Get last state from Redis
 	lastStateRaw, _ := redisClient.Get(ctx, fmt.Sprintf("device:%s", deviceID)).Result()
 	var lastState utils.DeviceState
@@ -30,8 +28,6 @@ func ProcessDeviceUpdate(ctx context.Context, redisClient *redis.Client, dbConn 
 		log.Printf("AUTOMATION: No significant change for device %s, skipping", deviceID)
 		return nil, nil
 	}
-
-	log.Printf("AUTOMATION: Significant change detected for device %s", deviceID)
 
 	// Update state in Redis
 	newStateRaw, _ := json.Marshal(newState)

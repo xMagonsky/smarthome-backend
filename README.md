@@ -12,7 +12,7 @@ This repository contains the backend implementation for a SmartHome system, desi
 
 ## Tech Stack
 - **Language**: GO
-- **Services**: PostgreSQL, Redis, EMQX
+- **Services**: PostgreSQL, Redis, Mosquitto
 - **Other tools**: Docker
 
 ## Installation

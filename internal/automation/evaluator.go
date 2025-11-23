@@ -15,7 +15,6 @@ import (
 
 // EvaluateConditions evaluates rule conditions
 func EvaluateConditions(redisClient *redis.Client, conditionsRaw json.RawMessage) bool {
-	log.Printf("AUTOMATION: Starting condition evaluation")
 	var condition models.Condition
 	if err := json.Unmarshal(conditionsRaw, &condition); err != nil {
 		log.Printf("AUTOMATION: Failed to unmarshal conditions: %v", err)
