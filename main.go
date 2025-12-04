@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,6 +16,10 @@ import (
 	"smarthome/internal/scheduler"
 	"smarthome/internal/taskqueue"
 	"smarthome/internal/web"
+
+	"github.com/pion/mdns/v2"
+	"golang.org/x/net/ipv4"
+	"golang.org/x/net/ipv6"
 )
 
 func main() {
@@ -54,6 +59,9 @@ func main() {
 	webServer := web.NewWebServer(mqttClient, dbConn.Pool(), redisClient, cfg.JWTSecret, eng)
 	go webServer.Start(":5069")
 
+	// Start mDNS server
+	go startMDNSServer()
+
 	// Graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -63,4 +71,37 @@ func main() {
 	sched.Stop()
 	taskqueue.StopWorkers()
 	log.Println("Shutdown complete")
+}
+
+func startMDNSServer() {
+	addr4, err := net.ResolveUDPAddr("udp4", mdns.DefaultAddressIPv4)
+	if err != nil {
+		log.Println("Failed to resolve UDP4 address for mDNS:", err)
+		return
+	}
+
+	addr6, err := net.ResolveUDPAddr("udp6", mdns.DefaultAddressIPv6)
+	if err != nil {
+		log.Println("Failed to resolve UDP6 address for mDNS:", err)
+		return
+	}
+
+	l4, err := net.ListenUDP("udp4", addr4)
+	if err != nil {
+		log.Println("Failed to listen on UDP4 for mDNS:", err)
+		return
+	}
+
+	l6, err := net.ListenUDP("udp6", addr6)
+	if err != nil {
+		log.Println("Failed to listen on UDP6 for mDNS:", err)
+		return
+	}
+
+	_, err = mdns.Server(ipv4.NewPacketConn(l4), ipv6.NewPacketConn(l6), &mdns.Config{
+		LocalNames: []string{"smarthome.local"},
+	})
+	if err != nil {
+		log.Println("Failed to start mDNS server:", err)
+	}
 }
