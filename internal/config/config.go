@@ -13,7 +13,7 @@ type Config struct {
 	MQTTClientID string `mapstructure:"MQTT_CLIENT_ID"`
 	LogLevel     string `mapstructure:"LOG_LEVEL"`
 	JWTSecret    string `mapstructure:"JWT_SECRET"`
-	// Add more fields as needed for expansion
+	AgentID      string `mapstructure:"AGENT_ID"`
 }
 
 // LoadConfig reads configuration from file, .env, or env vars
@@ -36,6 +36,7 @@ func LoadConfig() (*Config, error) {
 		MQTTClientID: viper.GetString("MQTT_CLIENT_ID"),
 		LogLevel:     viper.GetString("LOG_LEVEL"),
 		JWTSecret:    viper.GetString("JWT_SECRET"),
+		AgentID:      viper.GetString("AGENT_ID"),
 	}
 	return cfg, nil
 }

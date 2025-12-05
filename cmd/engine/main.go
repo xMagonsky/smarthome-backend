@@ -7,10 +7,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"smarthome/internal/config"
 	"smarthome/internal/db"
 	"smarthome/internal/engine"
+	"smarthome/internal/internet_bridge"
 	"smarthome/internal/mqtt"
 	"smarthome/internal/redis"
 	"smarthome/internal/scheduler"
@@ -61,6 +63,14 @@ func main() {
 
 	// Start mDNS server
 	go startMDNSServer()
+
+	uniqueID := cfg.AgentID
+	internet_bridge.Start(internet_bridge.Config{
+		PublicWS:   "ws://magonsky.scay.net:5069/agent",
+		LocalURL:   "http://127.0.0.1:5069",
+		ServerID:   uniqueID,
+		RetryDelay: 2 * time.Second,
+	})
 
 	// Graceful shutdown
 	sigChan := make(chan os.Signal, 1)
