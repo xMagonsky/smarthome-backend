@@ -134,3 +134,9 @@ func (d *DB) AcceptDevice(ctx context.Context, id, ownerID string) error {
 	_, err := d.pool.Exec(ctx, "UPDATE devices SET accepted = true WHERE device_id = $1", id)
 	return err
 }
+
+// DeleteDevice removes a device from the database
+func (d *DB) DeleteDevice(ctx context.Context, id string) error {
+	_, err := d.pool.Exec(ctx, "DELETE FROM devices WHERE device_id = $1", id)
+	return err
+}

@@ -190,5 +190,37 @@ func RegisterDeviceRoutes(r *gin.Engine, middleware *middleware.MiddlewareManage
 				"name":   requestBody.Name,
 			})
 		})
+
+		devices.DELETE("/:id", func(c *gin.Context) {
+			deviceID := c.Param("id")
+			userID := c.GetString("user_id")
+
+			// Verify device ownership
+			var ownerID *string
+			err := dbConn.QueryRow(c, "SELECT owner_id FROM devices WHERE device_id=$1", deviceID).Scan(&ownerID)
+			if err != nil {
+				c.JSON(404, gin.H{"error": "Device not found"})
+				return
+			}
+			if ownerID == nil || *ownerID != userID {
+				c.JSON(403, gin.H{"error": "Unauthorized: You don't own this device"})
+				return
+			}
+
+			// Delete the device
+			commandTag, err := dbConn.Exec(c, "DELETE FROM devices WHERE device_id=$1", deviceID)
+			if err != nil {
+				c.JSON(500, gin.H{"error": "Failed to delete device"})
+				return
+			}
+			if commandTag.RowsAffected() == 0 {
+				c.JSON(404, gin.H{"error": "Device not found"})
+				return
+			}
+
+			c.JSON(200, gin.H{
+				"status": "Device deleted successfully",
+			})
+		})
 	}
 }
