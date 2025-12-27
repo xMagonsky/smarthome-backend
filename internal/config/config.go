@@ -50,16 +50,14 @@ type JWTConfig struct {
 
 // AppConfig holds application-level configuration
 type AppConfig struct {
-	LogLevel string
-	Port     int
-	AgentID  string
+	Port    int
+	AgentID string
 }
 
 // BridgeConfig holds internet bridge configuration
 type RemoteAccess struct {
-	Enabled        bool
-	PublicWS       string
-	RetryDelaySecs int
+	Enabled  bool
+	PublicWS string
 }
 
 // MDNSConfig holds mDNS server configuration
@@ -91,17 +89,15 @@ func LoadConfig() (*Config, error) {
 			Secret: getEnv("JWT_SECRET", ""),
 		},
 		App: AppConfig{
-			LogLevel: getEnv("LOG_LEVEL", "info"),
-			AgentID:  getEnv("AGENT_ID", ""),
-			Port:     getEnvInt("SERVER_PORT", 5069),
+			AgentID: getEnv("AGENT_ID", ""),
+			Port:    getEnvInt("SERVER_PORT", 5069),
 		},
 		RemoteAccess: RemoteAccess{
-			Enabled:        getEnvBool("REMOTE_ACCESS_ENABLED", true),
-			PublicWS:       getEnv("REMOTE_ACCESS_WS_URL", "ws://magonsky.scay.net:5069/agent"),
-			RetryDelaySecs: getEnvInt("REMOTE_ACCESS_RETRY_DELAY", 2),
+			Enabled:  getEnvBool("REMOTE_ACCESS_ENABLED", true),
+			PublicWS: getEnv("REMOTE_ACCESS_WS_URL", "ws://magonsky.scay.net:5069/agent"),
 		},
 		MDNS: MDNSConfig{
-			LocalName: getEnv("MDNS_LOCAL_NAME", "smarthome.local"),
+			LocalName: getEnv("MDNS_URL", "smarthome.local"),
 		},
 	}
 
@@ -242,6 +238,5 @@ func (c *Config) GetDBURL() string        { return c.Database.URL }
 func (c *Config) GetRedisAddr() string    { return c.Redis.Addr }
 func (c *Config) GetMQTTBroker() string   { return c.MQTT.Broker }
 func (c *Config) GetMQTTClientID() string { return c.MQTT.ClientID }
-func (c *Config) GetLogLevel() string     { return c.App.LogLevel }
 func (c *Config) GetJWTSecret() string    { return c.JWT.Secret }
 func (c *Config) GetAgentID() string      { return c.App.AgentID }

@@ -72,7 +72,7 @@ func main() {
 			PublicWS:   cfg.RemoteAccess.PublicWS,
 			LocalURL:   "127.0.0.1:" + fmt.Sprintf("%d", cfg.App.Port),
 			ServerID:   uniqueID,
-			RetryDelay: time.Duration(cfg.RemoteAccess.RetryDelaySecs) * time.Second,
+			RetryDelay: time.Duration(2) * time.Second,
 		})
 	} else {
 		log.Println("Remote access bridge is disabled")
