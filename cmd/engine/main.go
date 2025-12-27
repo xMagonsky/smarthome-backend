@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -31,22 +32,22 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	dbConn, err := db.NewDB(cfg.DBURL)
+	dbConn, err := db.NewDB(cfg.Database.URL)
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
 	}
 	defer dbConn.Close(context.Background())
 
-	redisClient := redis.NewRedisClient(cfg.RedisAddr)
+	redisClient := redis.NewRedisClient(cfg.Redis.Addr)
 
-	mqttClient, err := mqtt.NewMQTTClient(cfg.MQTTBroker, cfg.MQTTClientID)
+	mqttClient, err := mqtt.NewMQTTClient(cfg.MQTT.Broker, cfg.MQTT.ClientID)
 	if err != nil {
 		log.Fatalf("Failed to connect to MQTT: %v", err)
 	}
 
 	taskqueue.SetGlobalInstances(dbConn, redisClient, mqttClient)
 
-	go taskqueue.StartWorkers(cfg.RedisAddr)
+	go taskqueue.StartWorkers(cfg.Redis.Addr)
 
 	sched := scheduler.NewScheduler(dbConn)
 	sched.Start()
@@ -58,19 +59,24 @@ func main() {
 	}
 
 	// Pass engine to web server so it can notify about rule changes
-	webServer := web.NewWebServer(mqttClient, dbConn.Pool(), redisClient, cfg.JWTSecret, eng, cfg.AgentID)
-	go webServer.Start(":5069")
+	webServer := web.NewWebServer(mqttClient, dbConn.Pool(), redisClient, cfg.JWT.Secret, eng, cfg.App.AgentID)
+	go webServer.Start(fmt.Sprintf(":%d", cfg.App.Port))
 
 	// Start mDNS server
-	go startMDNSServer()
+	go startMDNSServer(cfg.MDNS.LocalName)
 
-	uniqueID := cfg.AgentID
-	internet_bridge.Start(internet_bridge.Config{
-		PublicWS:   "ws://magonsky.scay.net:5069/agent",
-		LocalURL:   "http://127.0.0.1:5069",
-		ServerID:   uniqueID,
-		RetryDelay: 2 * time.Second,
-	})
+	// Start remote access bridge if enabled
+	if cfg.RemoteAccess.Enabled {
+		uniqueID := cfg.App.AgentID
+		internet_bridge.Start(internet_bridge.Config{
+			PublicWS:   cfg.RemoteAccess.PublicWS,
+			LocalURL:   "127.0.0.1:" + fmt.Sprintf("%d", cfg.App.Port),
+			ServerID:   uniqueID,
+			RetryDelay: time.Duration(cfg.RemoteAccess.RetryDelaySecs) * time.Second,
+		})
+	} else {
+		log.Println("Remote access bridge is disabled")
+	}
 
 	// Graceful shutdown
 	sigChan := make(chan os.Signal, 1)
@@ -83,7 +89,7 @@ func main() {
 	log.Println("Shutdown complete")
 }
 
-func startMDNSServer() {
+func startMDNSServer(localName string) {
 	addr4, err := net.ResolveUDPAddr("udp4", mdns.DefaultAddressIPv4)
 	if err != nil {
 		log.Println("Failed to resolve UDP4 address for mDNS:", err)
@@ -109,7 +115,7 @@ func startMDNSServer() {
 	}
 
 	_, err = mdns.Server(ipv4.NewPacketConn(l4), ipv6.NewPacketConn(l6), &mdns.Config{
-		LocalNames: []string{"smarthome.local"},
+		LocalNames: []string{localName},
 	})
 	if err != nil {
 		log.Println("Failed to start mDNS server:", err)

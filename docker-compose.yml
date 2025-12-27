@@ -1,14 +1,13 @@
-version: '3'
 services:
   postgres:
-    image: postgres:15
+    image: postgres:latest
     environment:
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: smarthome
     ports:
       - "5432:5432"
   redis:
-    image: redis:7
+    image: redis:latest
     ports:
       - "6379:6379"
   mosquitto:
@@ -24,6 +23,7 @@ services:
       - redis
       - mosquitto
     env_file:
-      - .example.env
+      - .env
     ports:
       - "5069:5069"
+    restart: unless-stopped

@@ -7,6 +7,6 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o engine main.go
+RUN go build -o engine cmd/engine/main.go
 
 CMD ["./engine"]

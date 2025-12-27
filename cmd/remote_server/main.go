@@ -107,8 +107,6 @@ func handleAgentWSGin(c *gin.Context) {
 }
 
 func handleClientRequest(c *gin.Context) {
-	println("Step 1")
-
 	agentID := c.GetHeader("X-Server-ID")
 	if agentID == "" {
 		c.JSON(490, gin.H{"error": "Missing X-Server-ID"})
@@ -123,8 +121,6 @@ func handleClientRequest(c *gin.Context) {
 		c.JSON(491, gin.H{"error": "Agent offline"})
 		return
 	}
-
-	println("Step 2")
 
 	var body interface{}
 	c.ShouldBindJSON(&body) // Ignore error - it's okay if there's no body
