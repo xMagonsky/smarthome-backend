@@ -19,11 +19,12 @@ type Config struct {
 }
 
 type requestMsg struct {
-	Type   string      `json:"type"`
-	ReqId  string      `json:"reqId"`
-	Method string      `json:"method"`
-	Path   string      `json:"path"`
-	Body   interface{} `json:"body"`
+	Type    string            `json:"type"`
+	ReqId   string            `json:"reqId"`
+	Method  string            `json:"method"`
+	Path    string            `json:"path"`
+	Headers map[string]string `json:"headers"`
+	Body    interface{}       `json:"body"`
 }
 
 type responseMsg struct {
@@ -91,6 +92,11 @@ func doLocalRequest(base string, req requestMsg) (interface{}, int) {
 
 	httpReq, _ := http.NewRequest(req.Method, base+req.Path, bytes.NewBuffer(bodyBytes))
 	httpReq.Header.Set("Content-Type", "application/json")
+
+	// Set headers from the request
+	for key, value := range req.Headers {
+		httpReq.Header.Set(key, value)
+	}
 
 	client := &http.Client{Timeout: 5 * time.Second}
 

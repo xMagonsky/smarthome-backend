@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterAuthRoutes(router *gin.Engine, authModule *auth.AuthModule, middlewareManager *middleware.MiddlewareManager) {
+func RegisterAuthRoutes(router *gin.Engine, authModule *auth.AuthModule, middlewareManager *middleware.MiddlewareManager, agentID string) {
 	r := router.Group("/auth")
 	{
 		r.POST("/login", func(c *gin.Context) {
@@ -22,7 +22,7 @@ func RegisterAuthRoutes(router *gin.Engine, authModule *auth.AuthModule, middlew
 				c.JSON(401, gin.H{"error": err.Error()})
 				return
 			}
-			c.JSON(200, gin.H{"token": token})
+			c.JSON(200, gin.H{"token": token, "agent_id": agentID})
 		})
 		r.POST("/register", func(c *gin.Context) {
 			var registerRequest models.RegisterRequest
@@ -35,7 +35,7 @@ func RegisterAuthRoutes(router *gin.Engine, authModule *auth.AuthModule, middlew
 				c.JSON(400, gin.H{"error": err.Error()})
 				return
 			}
-			c.JSON(201, gin.H{"token": token})
+			c.JSON(201, gin.H{"token": token, "agent_id": agentID})
 		})
 	}
 }

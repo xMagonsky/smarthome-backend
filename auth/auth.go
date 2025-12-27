@@ -158,6 +158,7 @@ func (a *AuthModule) LoginWithSession(ctx context.Context, username, password st
 }
 
 func (a *AuthModule) ValidateTokenJWT(ctx context.Context, token string) (string, error) {
+	println(token)
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")

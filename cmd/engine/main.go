@@ -58,7 +58,7 @@ func main() {
 	}
 
 	// Pass engine to web server so it can notify about rule changes
-	webServer := web.NewWebServer(mqttClient, dbConn.Pool(), redisClient, cfg.JWTSecret, eng)
+	webServer := web.NewWebServer(mqttClient, dbConn.Pool(), redisClient, cfg.JWTSecret, eng, cfg.AgentID)
 	go webServer.Start(":5069")
 
 	// Start mDNS server

@@ -25,11 +25,12 @@ var upgrader = websocket.Upgrader{
 }
 
 type RequestMsg struct {
-	Type   string      `json:"type"`
-	ReqId  string      `json:"reqId"`
-	Method string      `json:"method"`
-	Path   string      `json:"path"`
-	Body   interface{} `json:"body"`
+	Type    string            `json:"type"`
+	ReqId   string            `json:"reqId"`
+	Method  string            `json:"method"`
+	Path    string            `json:"path"`
+	Headers map[string]string `json:"headers"`
+	Body    interface{}       `json:"body"`
 }
 
 type ResponseMsg struct {
@@ -106,9 +107,11 @@ func handleAgentWSGin(c *gin.Context) {
 }
 
 func handleClientRequest(c *gin.Context) {
+	println("Step 1")
+
 	agentID := c.GetHeader("X-Server-ID")
 	if agentID == "" {
-		c.JSON(400, gin.H{"error": "Missing X-Server-ID"})
+		c.JSON(490, gin.H{"error": "Missing X-Server-ID"})
 		return
 	}
 
@@ -117,21 +120,31 @@ func handleClientRequest(c *gin.Context) {
 	agentsMux.Unlock()
 
 	if !ok {
-		c.JSON(400, gin.H{"error": "Agent offline"})
+		c.JSON(491, gin.H{"error": "Agent offline"})
 		return
 	}
 
+	println("Step 2")
+
 	var body interface{}
-	c.BindJSON(&body)
+	c.ShouldBindJSON(&body) // Ignore error - it's okay if there's no body
+
+	headers := make(map[string]string)
+	for key, values := range c.Request.Header {
+		if len(values) > 0 {
+			headers[key] = values[0] // Take the first value if multiple
+		}
+	}
 
 	reqId := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	msg := RequestMsg{
-		Type:   "request",
-		ReqId:  reqId,
-		Method: c.Request.Method,
-		Path:   c.Request.URL.Path,
-		Body:   body,
+		Type:    "request",
+		ReqId:   reqId,
+		Method:  c.Request.Method,
+		Path:    c.Request.URL.Path,
+		Headers: headers,
+		Body:    body,
 	}
 
 	data, _ := json.Marshal(msg)

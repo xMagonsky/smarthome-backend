@@ -22,7 +22,7 @@ type WebServer struct {
 	router *gin.Engine
 }
 
-func NewWebServer(mqttClient MQTT.Client, dbConn *pgxpool.Pool, redisClient *redis.Client, JWTSecret string, engine EngineInterface) *WebServer {
+func NewWebServer(mqttClient MQTT.Client, dbConn *pgxpool.Pool, redisClient *redis.Client, JWTSecret string, engine EngineInterface, agentID string) *WebServer {
 	router := gin.Default()
 
 	authModule := auth.NewAuthModule(dbConn, redisClient, JWTSecret)
@@ -30,8 +30,8 @@ func NewWebServer(mqttClient MQTT.Client, dbConn *pgxpool.Pool, redisClient *red
 	// pumpService := services.NewPumpService(mqttClient)
 
 	// api.RegisterTestRoutes(router, api.Dependencies{PumpService: pumpService})
-	api.RegisterAuthRoutes(router, authModule, middlewareManager)
-	api.RegisterDeviceRoutes(router, middlewareManager, dbConn)
+	api.RegisterAuthRoutes(router, authModule, middlewareManager, agentID)
+	api.RegisterDeviceRoutes(router, middlewareManager, dbConn, mqttClient)
 	api.RegisterAutomationRoutes(router, middlewareManager, dbConn, engine)
 	api.RegisterUserRoutes(router, middlewareManager, dbConn)
 
