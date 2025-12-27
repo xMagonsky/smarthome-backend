@@ -22,7 +22,7 @@ func ProcessDeviceUpdate(ctx context.Context, redisClient *redis.Client, dbConn 
 		// Device doesn't exist, add it with accepted=false
 		log.Printf("AUTOMATION: Device %s not found in database, adding with accepted=false", deviceID)
 		newStateRaw, _ := json.Marshal(newState)
-		mqttTopic := fmt.Sprintf("devices/%s/state", deviceID)
+		mqttTopic := fmt.Sprintf("devices/%s", deviceID)
 		if err := dbConn.InsertDevice(ctx, deviceID, deviceID, "unknown", mqttTopic, newStateRaw); err != nil {
 			log.Printf("AUTOMATION: Failed to insert new device %s: %v", deviceID, err)
 		}

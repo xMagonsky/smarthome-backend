@@ -90,7 +90,7 @@ func (d *DB) GetSchedulesByRuleID(ctx context.Context, ruleID string) ([]models.
 // GetDeviceByID fetches a device by ID
 func (d *DB) GetDeviceByID(ctx context.Context, id string) (*models.Device, error) {
 	var device models.Device
-	err := d.pool.QueryRow(ctx, "SELECT device_id, name, type, state, mqtt_topic, accepted, COALESCE(CAST(owner_id AS TEXT), '') FROM devices WHERE device_id = $1", id).
+	err := d.pool.QueryRow(ctx, "SELECT device_id, name, type, state, mqtt_topic, accepted, owner_id FROM devices WHERE device_id = $1", id).
 		Scan(&device.ID, &device.Name, &device.Type, &device.State, &device.MQTTTopic, &device.Accepted, &device.OwnerID)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (d *DB) InsertDevice(ctx context.Context, id, name, deviceType, mqttTopic s
 
 // GetPendingDevices fetches all devices with accepted=false
 func (d *DB) GetPendingDevices(ctx context.Context) ([]models.Device, error) {
-	rows, err := d.pool.Query(ctx, "SELECT device_id, name, type, state, mqtt_topic, accepted, COALESCE(CAST(owner_id AS TEXT), '') FROM devices WHERE accepted = false")
+	rows, err := d.pool.Query(ctx, "SELECT device_id, name, type, state, mqtt_topic, accepted, owner_id FROM devices WHERE accepted = false")
 	if err != nil {
 		return nil, err
 	}

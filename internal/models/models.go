@@ -10,7 +10,7 @@ type Device struct {
 	State     json.RawMessage `json:"state"`
 	MQTTTopic string          `json:"mqtt_topic"`
 	Accepted  bool            `json:"accepted"`
-	OwnerID   string          `json:"owner_id"`
+	OwnerID   *string         `json:"owner_id"`
 }
 
 // Condition represents a condition in a rule
