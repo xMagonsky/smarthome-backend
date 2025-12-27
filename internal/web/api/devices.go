@@ -19,7 +19,7 @@ func RegisterDeviceRoutes(r *gin.Engine, middleware *middleware.MiddlewareManage
 		devices.GET("/", func(c *gin.Context) {
 			userID := c.GetString("user_id")
 			println("User ID from context:", userID)
-			rows, err := dbConn.Query(c, "SELECT id, name, type, state, mqtt_topic FROM devices WHERE owner_id=$1", userID)
+			rows, err := dbConn.Query(c, "SELECT device_id, name, type, state, mqtt_topic, accepted, CAST(owner_id AS TEXT) FROM devices WHERE owner_id=$1 AND accepted=true", userID)
 			if err != nil {
 				println("Error fetching devices:", err.Error())
 				c.JSON(500, gin.H{"error": "Failed to fetch devices"})
@@ -30,7 +30,7 @@ func RegisterDeviceRoutes(r *gin.Engine, middleware *middleware.MiddlewareManage
 			devices := []models.Device{}
 			for rows.Next() {
 				var device models.Device
-				if err := rows.Scan(&device.ID, &device.Name, &device.Type, &device.State, &device.MQTTTopic); err != nil {
+				if err := rows.Scan(&device.ID, &device.Name, &device.Type, &device.State, &device.MQTTTopic, &device.Accepted, &device.OwnerID); err != nil {
 					c.JSON(500, gin.H{"error": "Failed to scan device"})
 					return
 				}
@@ -40,11 +40,49 @@ func RegisterDeviceRoutes(r *gin.Engine, middleware *middleware.MiddlewareManage
 			c.JSON(200, devices)
 		})
 
+		devices.GET("/pending", func(c *gin.Context) {
+			rows, err := dbConn.Query(c, "SELECT device_id, name, type, state, mqtt_topic, accepted, COALESCE(CAST(owner_id AS TEXT), '') FROM devices WHERE accepted=false")
+			if err != nil {
+				println("Error fetching pending devices:", err.Error())
+				c.JSON(500, gin.H{"error": "Failed to fetch pending devices"})
+				return
+			}
+			defer rows.Close()
+
+			devices := []models.Device{}
+			for rows.Next() {
+				var device models.Device
+				if err := rows.Scan(&device.ID, &device.Name, &device.Type, &device.State, &device.MQTTTopic, &device.Accepted, &device.OwnerID); err != nil {
+					c.JSON(500, gin.H{"error": "Failed to scan device"})
+					return
+				}
+				devices = append(devices, device)
+			}
+
+			c.JSON(200, devices)
+		})
+
+		devices.POST("/:id/accept", func(c *gin.Context) {
+			deviceID := c.Param("id")
+			userID := c.GetString("user_id")
+
+			commandTag, err := dbConn.Exec(c, "UPDATE devices SET accepted=true, owner_id=$1 WHERE device_id=$2", userID, deviceID)
+			if err != nil {
+				c.JSON(500, gin.H{"error": "Failed to accept device"})
+				return
+			}
+			if commandTag.RowsAffected() == 0 {
+				c.JSON(404, gin.H{"error": "Device not found"})
+				return
+			}
+			c.JSON(200, gin.H{"status": "Device accepted successfully"})
+		})
+
 		devices.PATCH("/:id/setowner", func(c *gin.Context) {
 			deviceID := c.Param("id")
 			newOwnerID := c.GetString("user_id")
 
-			commandTag, err := dbConn.Exec(c, "UPDATE devices SET owner_id=$1 WHERE id=$2", newOwnerID, deviceID)
+			commandTag, err := dbConn.Exec(c, "UPDATE devices SET owner_id=$1 WHERE device_id=$2", newOwnerID, deviceID)
 			if err != nil {
 				c.JSON(500, gin.H{"error": "Failed to update device owner"})
 				return
@@ -60,11 +98,16 @@ func RegisterDeviceRoutes(r *gin.Engine, middleware *middleware.MiddlewareManage
 			deviceID := c.Param("id")
 			userID := c.GetString("user_id")
 
-			// Verify device ownership
+			// Verify device ownership and acceptance
 			var ownerID string
-			err := dbConn.QueryRow(c, "SELECT owner_id FROM devices WHERE id=$1", deviceID).Scan(&ownerID)
+			var accepted bool
+			err := dbConn.QueryRow(c, "SELECT CAST(owner_id AS TEXT), accepted FROM devices WHERE device_id=$1", deviceID).Scan(&ownerID, &accepted)
 			if err != nil {
 				c.JSON(404, gin.H{"error": "Device not found"})
+				return
+			}
+			if !accepted {
+				c.JSON(403, gin.H{"error": "Device not accepted"})
 				return
 			}
 			if ownerID != userID {

@@ -15,6 +15,27 @@ import (
 
 // ProcessDeviceUpdate handles device state updates and returns rule IDs to evaluate
 func ProcessDeviceUpdate(ctx context.Context, redisClient *redis.Client, dbConn *db.DB, deviceID string, newState utils.DeviceState) ([]string, error) {
+	// Check if device exists in database
+	device, err := dbConn.GetDeviceByID(ctx, deviceID)
+	if err != nil {
+		println("error fetching device:", err.Error())
+		// Device doesn't exist, add it with accepted=false
+		log.Printf("AUTOMATION: Device %s not found in database, adding with accepted=false", deviceID)
+		newStateRaw, _ := json.Marshal(newState)
+		mqttTopic := fmt.Sprintf("devices/%s/state", deviceID)
+		if err := dbConn.InsertDevice(ctx, deviceID, deviceID, "unknown", mqttTopic, newStateRaw); err != nil {
+			log.Printf("AUTOMATION: Failed to insert new device %s: %v", deviceID, err)
+		}
+		// Don't process rules for non-accepted devices
+		return nil, nil
+	}
+
+	// Don't process rules for non-accepted devices
+	if !device.Accepted {
+		log.Printf("AUTOMATION: Device %s is not accepted, skipping rule processing", deviceID)
+		return nil, nil
+	}
+
 	// Get last state from Redis
 	lastStateRaw, _ := redisClient.Get(ctx, fmt.Sprintf("device:%s", deviceID)).Result()
 	var lastState utils.DeviceState
