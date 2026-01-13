@@ -38,3 +38,30 @@ func ExecuteActions(mqttClient mqtt.Client, actionsRaw json.RawMessage) {
 	}
 	log.Printf("AUTOMATION: Action execution completed")
 }
+
+// ExecuteResolvedActions executes conflict-resolved actions
+// resolvedActions is a map of deviceID -> params (attribute -> value)
+func ExecuteResolvedActions(mqttClient mqtt.Client, resolvedActions map[string]map[string]interface{}) {
+	log.Printf("AUTOMATION: Starting resolved action execution for %d devices", len(resolvedActions))
+
+	if mqttClient == nil {
+		log.Printf("AUTOMATION: MQTT client not available")
+		return
+	}
+
+	for deviceID, params := range resolvedActions {
+		if len(params) > 0 {
+			payload, err := json.Marshal(params)
+			if err != nil {
+				log.Printf("AUTOMATION: Failed to marshal params for device %s: %v", deviceID, err)
+				continue
+			}
+
+			topic := fmt.Sprintf("devices/%s/commands", deviceID)
+			log.Printf("AUTOMATION: Publishing resolved MQTT command to %s: %s", topic, string(payload))
+			mqttClient.Publish(topic, 1, false, payload)
+		}
+	}
+
+	log.Printf("AUTOMATION: Resolved action execution completed")
+}
