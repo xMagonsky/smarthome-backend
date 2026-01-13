@@ -1,0 +1,467 @@
+{
+	"info": {
+		"_postman_id": "f1269b3a-e420-4df4-8a7a-1569b577a27d",
+		"name": "smarthome",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "44761725"
+	},
+	"item": [
+		{
+			"name": "auth",
+			"item": [
+				{
+					"name": "/auth/login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"test1\",\r\n    \"password\": \"123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5069/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5069",
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "/auth/login",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"test1\",\r\n    \"password\": \"123\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5069/auth/login",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5069",
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 13 Jan 2026 12:39:11 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "194"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"agent_id\": \"btP368S028JB_m3nThUX2Q==\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjgzOTQzNTEsImlhdCI6MTc2ODMwNzk1MSwidXNlcl9pZCI6MX0.FducFWjrnjYv-G8j3GJmRK9bqJMGvVpjEuRpz0efR8M\"\n}"
+						}
+					]
+				},
+				{
+					"name": "/auth/register",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"test2\",\r\n    \"password\": \"123\",\r\n    \"email\": \"2@test.pl\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5069/auth/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5069",
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "/auth/register",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"test2\",\r\n    \"password\": \"123\",\r\n    \"email\": \"2@test.pl\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5069/auth/register",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5069",
+									"path": [
+										"auth",
+										"register"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 13 Jan 2026 12:40:12 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "194"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"agent_id\": \"btP368S028JB_m3nThUX2Q==\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjgzOTQ0MTIsImlhdCI6MTc2ODMwODAxMiwidXNlcl9pZCI6Mn0.qssh8abkZNZFOka6VFb5Mb3_rQnWzkkmM3f2egYApDY\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "users",
+			"item": []
+		},
+		{
+			"name": "automations",
+			"item": [
+				{
+					"name": "/automations/rules",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5069/automations/rules",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5069",
+							"path": [
+								"automations",
+								"rules"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "/automations/rules",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5069/automations/rules",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5069",
+									"path": [
+										"automations",
+										"rules"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 13 Jan 2026 13:06:32 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "564"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"id\": \"2\",\n        \"name\": \"turn on night lights\",\n        \"conditions\": {\n            \"children\": [\n                {\n                    \"op\": \">\",\n                    \"key\": null,\n                    \"type\": \"time\",\n                    \"value\": \"21:00\",\n                    \"device_id\": \"\",\n                    \"min_change\": null\n                }\n            ],\n            \"operator\": \"AND\"\n        },\n        \"actions\": [\n            {\n                \"action\": \"set_state\",\n                \"params\": {\n                    \"red\": true\n                },\n                \"device_id\": \"1\"\n            }\n        ],\n        \"enabled\": true,\n        \"owner_id\": \"1\"\n    },\n    {\n        \"id\": \"8\",\n        \"name\": \"Temperature alert\",\n        \"conditions\": {\n            \"children\": [\n                {\n                    \"op\": \">\",\n                    \"key\": \"temperature\",\n                    \"type\": \"sensor\",\n                    \"value\": 25,\n                    \"device_id\": \"2\",\n                    \"min_change\": 0.1\n                }\n            ],\n            \"operator\": \"AND\"\n        },\n        \"actions\": [\n            {\n                \"action\": \"set_state\",\n                \"params\": {\n                    \"red\": true\n                },\n                \"device_id\": \"1\"\n            }\n        ],\n        \"enabled\": true,\n        \"owner_id\": \"1\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "/automations/rules",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Temperature alert\",\r\n    \"conditions\": {\r\n        \"children\": [\r\n            {\r\n                \"op\": \">\",\r\n                \"key\": \"temperature\",\r\n                \"type\": \"sensor\",\r\n                \"value\": 25.0,\r\n                \"device_id\": \"2\",\r\n                \"min_change\": 0.1\r\n            }\r\n        ],\r\n        \"operator\": \"AND\"\r\n    },\r\n    \"actions\": [\r\n        {\r\n            \"action\": \"set_state\",\r\n            \"params\": {\r\n                \"red\": true\r\n            },\r\n            \"device_id\": \"1\"\r\n        }\r\n    ],\r\n  \"enabled\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5069/automations/rules",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5069",
+							"path": [
+								"automations",
+								"rules"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "/automations/rules",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Temperature alert\",\r\n    \"conditions\": {\r\n        \"children\": [\r\n            {\r\n                \"op\": \">\",\r\n                \"key\": \"temperature\",\r\n                \"type\": \"sensor\",\r\n                \"value\": 25.0,\r\n                \"device_id\": \"2\",\r\n                \"min_change\": 0.1\r\n            }\r\n        ],\r\n        \"operator\": \"AND\"\r\n    },\r\n    \"actions\": [\r\n        {\r\n            \"action\": \"set_state\",\r\n            \"params\": {\r\n                \"red\": true\r\n            },\r\n            \"device_id\": \"1\"\r\n        }\r\n    ],\r\n  \"enabled\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5069/automations/rules",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5069",
+									"path": [
+										"automations",
+										"rules"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 13 Jan 2026 13:04:34 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "283"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"8\",\n    \"name\": \"Temperature alert\",\n    \"conditions\": {\n        \"children\": [\n            {\n                \"op\": \">\",\n                \"key\": \"temperature\",\n                \"type\": \"sensor\",\n                \"value\": 25,\n                \"device_id\": \"2\",\n                \"min_change\": 0.1\n            }\n        ],\n        \"operator\": \"AND\"\n    },\n    \"actions\": [\n        {\n            \"action\": \"set_state\",\n            \"params\": {\n                \"red\": true\n            },\n            \"device_id\": \"1\"\n        }\n    ],\n    \"enabled\": true,\n    \"owner_id\": \"1\"\n}"
+						}
+					]
+				},
+				{
+					"name": "/automations/rules/:id",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": \"2\",\r\n    \"name\": \"Lights OFF\",\r\n    \"conditions\": {\r\n        \"children\": [\r\n            {\r\n                \"op\": \">\",\r\n                \"key\": null,\r\n                \"type\": \"time\",\r\n                \"value\": \"23:00\",\r\n                \"device_id\": \"\",\r\n                \"min_change\": null\r\n            }\r\n        ],\r\n        \"operator\": \"AND\"\r\n    },\r\n    \"actions\": [\r\n        {\r\n            \"action\": \"set_state\",\r\n            \"params\": {\r\n                \"red\": false\r\n            },\r\n            \"device_id\": \"1\"\r\n        }\r\n    ],\r\n    \"enabled\": false\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5069/automations/rules/2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5069",
+							"path": [
+								"automations",
+								"rules",
+								"2"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "/automations/rules/:id",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"id\": \"2\",\r\n    \"name\": \"Lights OFF\",\r\n    \"conditions\": {\r\n        \"children\": [\r\n            {\r\n                \"op\": \">\",\r\n                \"key\": null,\r\n                \"type\": \"time\",\r\n                \"value\": \"23:00\",\r\n                \"device_id\": \"\",\r\n                \"min_change\": null\r\n            }\r\n        ],\r\n        \"operator\": \"AND\"\r\n    },\r\n    \"actions\": [\r\n        {\r\n            \"action\": \"set_state\",\r\n            \"params\": {\r\n                \"red\": false\r\n            },\r\n            \"device_id\": \"1\"\r\n        }\r\n    ],\r\n    \"enabled\": false\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:5069/automations/rules/2",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "5069",
+									"path": [
+										"automations",
+										"rules",
+										"2"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 13 Jan 2026 13:11:33 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "270"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"2\",\n    \"name\": \"Lights OFF\",\n    \"conditions\": {\n        \"children\": [\n            {\n                \"op\": \">\",\n                \"key\": null,\n                \"type\": \"time\",\n                \"value\": \"23:00\",\n                \"device_id\": \"\",\n                \"min_change\": null\n            }\n        ],\n        \"operator\": \"AND\"\n    },\n    \"actions\": [\n        {\n            \"action\": \"set_state\",\n            \"params\": {\n                \"red\": false\n            },\n            \"device_id\": \"1\"\n        }\n    ],\n    \"enabled\": false,\n    \"owner_id\": \"1\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "devices",
+			"item": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
