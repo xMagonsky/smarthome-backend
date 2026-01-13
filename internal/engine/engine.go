@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"smarthome/internal/automation"
 	"smarthome/internal/db"
 	"smarthome/internal/models"
 	"smarthome/internal/scheduler"
@@ -41,22 +42,11 @@ func (e *Engine) Start() error {
 	log.Println("Subscribing to MQTT topic: devices/+/state")
 	e.mqttClient.Subscribe("devices/+/state", 1, e.onDeviceUpdate)
 
-	// Load and schedule all schedules
-	log.Println("Loading schedules from database")
-	schedules, err := e.db.GetAllSchedules(context.Background())
-	if err != nil {
+	// Load all schedules using the scheduler's LoadSchedules method
+	log.Println("Loading schedules from database via scheduler")
+	if err := e.scheduler.LoadSchedules(); err != nil {
 		log.Printf("Error loading schedules: %v", err)
 		return err
-	}
-	log.Printf("Found %d schedules", len(schedules))
-	for _, s := range schedules {
-		if s.Enabled {
-			ruleID := s.RuleID // capture loop variable
-			log.Printf("Scheduling rule %s with cron %s", ruleID, s.CronExpression)
-			e.scheduler.AddJob(s.CronExpression, func() {
-				go e.handleScheduleTrigger(ruleID)
-			})
-		}
 	}
 
 	// Populate device-rule associations in Redis
@@ -93,11 +83,6 @@ func (e *Engine) onDeviceUpdate(client mqtt.Client, msg mqtt.Message) {
 	if err := taskqueue.EnqueueDeviceUpdate(deviceID, state); err != nil {
 		log.Printf("Error enqueuing device update: %v", err)
 	}
-}
-
-// handleScheduleTrigger is called when a schedule is triggered
-func (e *Engine) handleScheduleTrigger(ruleID string) {
-	taskqueue.EnqueueEvaluation(ruleID, "")
 }
 
 // populateDeviceRuleAssociations populates Redis with device-rule associations
@@ -248,6 +233,50 @@ func (e *Engine) RefreshRuleAssociations(ruleID string) error {
 	return nil
 }
 
+// createSchedulesFromTimeConditions creates schedule records for time-based conditions in a rule
+func (e *Engine) createSchedulesFromTimeConditions(ruleID string, conditionsRaw json.RawMessage, enabled bool) {
+	timeConditions := automation.ExtractTimeConditions(conditionsRaw)
+
+	if len(timeConditions) == 0 {
+		log.Printf("No time conditions found for rule %s", ruleID)
+		return
+	}
+
+	log.Printf("Creating %d schedules from time conditions for rule %s", len(timeConditions), ruleID)
+
+	for _, tc := range timeConditions {
+		// Generate cron expression
+		cronExpr := automation.ConvertToCronExpression(tc)
+
+		// Check if schedule already exists for this rule and cron expression
+		existingSchedule, err := e.db.GetScheduleByRuleAndCron(context.Background(), ruleID, cronExpr)
+
+		var scheduleID string
+		if err != nil || existingSchedule == nil {
+			// Schedule doesn't exist, create it
+			scheduleID, err = e.db.CreateSchedule(context.Background(), ruleID, cronExpr, enabled)
+			if err != nil {
+				log.Printf("Failed to create schedule for rule %s: %v", ruleID, err)
+				continue
+			}
+			log.Printf("Created schedule %s for rule %s: %s", scheduleID, ruleID, cronExpr)
+		} else {
+			// Schedule exists, update it
+			scheduleID = existingSchedule.ID
+			if err := e.db.UpdateSchedule(context.Background(), scheduleID, cronExpr, enabled); err != nil {
+				log.Printf("Failed to update schedule %s for rule %s: %v", scheduleID, ruleID, err)
+				continue
+			}
+			log.Printf("Updated schedule %s for rule %s: %s", scheduleID, ruleID, cronExpr)
+		}
+
+		// Add schedule to the scheduler
+		if err := e.scheduler.AddOrUpdateSchedule(scheduleID, ruleID, cronExpr, enabled); err != nil {
+			log.Printf("Failed to add schedule %s to scheduler: %v", scheduleID, err)
+		}
+	}
+}
+
 // RemoveRuleAssociations removes all associations for a rule
 func (e *Engine) RemoveRuleAssociations(ruleID string) error {
 	log.Printf("Removing associations for rule %s", ruleID)
@@ -263,7 +292,7 @@ func (e *Engine) RemoveRuleAssociations(ruleID string) error {
 		e.redisClient.SRem(context.Background(), key, ruleID)
 	}
 
-	// Remove schedules for this rule
+	// Remove schedules for this rule (including auto-generated ones)
 	e.removeSchedulesForRule(ruleID)
 
 	log.Printf("Successfully removed associations for rule %s", ruleID)
@@ -271,11 +300,43 @@ func (e *Engine) RemoveRuleAssociations(ruleID string) error {
 }
 
 // refreshSchedulesForRule refreshes schedules for a specific rule
+// Also automatically creates schedules for time-based conditions
 func (e *Engine) refreshSchedulesForRule(ruleID string) {
 	log.Printf("Refreshing schedules for rule %s", ruleID)
 
-	// Remove existing schedules for this rule (simplified - in a real implementation you'd want more sophisticated schedule management)
-	e.removeSchedulesForRule(ruleID)
+	// Get the rule to check for time conditions
+	rule, err := e.db.GetRuleByID(context.Background(), ruleID)
+	if err != nil {
+		log.Printf("Error getting rule %s: %v", ruleID, err)
+		return
+	}
+
+	// Check if rule has time conditions and auto-create schedules
+	if automation.HasTimeConditions(rule.Conditions) {
+		log.Printf("Rule %s has time conditions, auto-creating schedules", ruleID)
+		e.createSchedulesFromTimeConditions(ruleID, rule.Conditions, rule.Enabled)
+	}
+
+	// Get existing schedules for this rule
+	schedules, err := e.db.GetSchedulesByRuleID(context.Background(), ruleID)
+	if err != nil {
+		log.Printf("Error getting schedules for rule %s: %v", ruleID, err)
+		return
+	}
+
+	// Add or update each schedule in the scheduler
+	for _, s := range schedules {
+		if err := e.scheduler.AddOrUpdateSchedule(s.ID, s.RuleID, s.CronExpression, s.Enabled); err != nil {
+			log.Printf("Error adding/updating schedule %s for rule %s: %v", s.ID, ruleID, err)
+		}
+	}
+
+	log.Printf("Refreshed %d schedules for rule %s", len(schedules), ruleID)
+}
+
+// removeSchedulesForRule removes schedules for a specific rule from both scheduler and database
+func (e *Engine) removeSchedulesForRule(ruleID string) {
+	log.Printf("Removing schedules for rule %s", ruleID)
 
 	// Get schedules for this rule
 	schedules, err := e.db.GetSchedulesByRuleID(context.Background(), ruleID)
@@ -284,31 +345,30 @@ func (e *Engine) refreshSchedulesForRule(ruleID string) {
 		return
 	}
 
-	// Add enabled schedules
+	// Remove each schedule from scheduler and database
 	for _, s := range schedules {
-		if s.Enabled {
-			capturedRuleID := s.RuleID // capture loop variable
-			log.Printf("Adding schedule for rule %s with cron %s", capturedRuleID, s.CronExpression)
-			e.scheduler.AddJob(s.CronExpression, func() {
-				go e.handleScheduleTrigger(capturedRuleID)
-			})
+		// Remove from scheduler
+		e.scheduler.RemoveSchedule(s.ID)
+
+		// Remove from database
+		if err := e.db.DeleteSchedule(context.Background(), s.ID); err != nil {
+			log.Printf("Error deleting schedule %s from database: %v", s.ID, err)
 		}
 	}
-}
 
-// removeSchedulesForRule removes schedules for a specific rule
-func (e *Engine) removeSchedulesForRule(ruleID string) {
-	// Note: This is a simplified implementation. In a real system, you'd want to maintain
-	// a mapping of rule IDs to schedule job IDs to properly remove them from the scheduler
-	log.Printf("Removing schedules for rule %s (simplified implementation)", ruleID)
-	// For now, this is a placeholder - you'd need to enhance the scheduler
-	// to support removing specific jobs by rule ID
+	log.Printf("Removed %d schedules for rule %s", len(schedules), ruleID)
 }
 
 // RefreshAllRuleAssociations refreshes all device-rule associations
 func (e *Engine) RefreshAllRuleAssociations() error {
 	log.Println("Refreshing all rule associations")
 	return e.populateDeviceRuleAssociations()
+}
+
+// ReloadAllSchedules reloads all schedules from the database
+func (e *Engine) ReloadAllSchedules() error {
+	log.Println("Reloading all schedules")
+	return e.scheduler.ReloadSchedules()
 }
 
 // TriggerRuleEvaluation triggers immediate evaluation of a rule

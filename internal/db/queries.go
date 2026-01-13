@@ -140,3 +140,54 @@ func (d *DB) DeleteDevice(ctx context.Context, id string) error {
 	_, err := d.pool.Exec(ctx, "DELETE FROM devices WHERE id = $1", id)
 	return err
 }
+
+// CreateSchedule creates a new schedule and returns the generated ID
+func (d *DB) CreateSchedule(ctx context.Context, ruleID, cronExpression string, enabled bool) (string, error) {
+	var id string
+	err := d.pool.QueryRow(ctx,
+		"INSERT INTO schedules (rule_id, cron_expression, enabled) VALUES ($1, $2, $3) RETURNING id",
+		ruleID, cronExpression, enabled).Scan(&id)
+	return id, err
+}
+
+// UpdateSchedule updates an existing schedule
+func (d *DB) UpdateSchedule(ctx context.Context, id, cronExpression string, enabled bool) error {
+	_, err := d.pool.Exec(ctx,
+		"UPDATE schedules SET cron_expression = $1, enabled = $2 WHERE id = $3",
+		cronExpression, enabled, id)
+	return err
+}
+
+// DeleteSchedule removes a schedule from the database
+func (d *DB) DeleteSchedule(ctx context.Context, id string) error {
+	_, err := d.pool.Exec(ctx, "DELETE FROM schedules WHERE id = $1", id)
+	return err
+}
+
+// DeleteSchedulesByRuleID removes all schedules for a specific rule
+func (d *DB) DeleteSchedulesByRuleID(ctx context.Context, ruleID string) error {
+	_, err := d.pool.Exec(ctx, "DELETE FROM schedules WHERE rule_id = $1", ruleID)
+	return err
+}
+
+// GetScheduleByID fetches a specific schedule by ID
+func (d *DB) GetScheduleByID(ctx context.Context, id string) (*models.Schedule, error) {
+	var s models.Schedule
+	err := d.pool.QueryRow(ctx, "SELECT id, rule_id, cron_expression, enabled FROM schedules WHERE id = $1", id).
+		Scan(&s.ID, &s.RuleID, &s.CronExpression, &s.Enabled)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+// GetScheduleByRuleAndCron fetches a schedule by rule ID and cron expression
+func (d *DB) GetScheduleByRuleAndCron(ctx context.Context, ruleID, cronExpression string) (*models.Schedule, error) {
+	var s models.Schedule
+	err := d.pool.QueryRow(ctx, "SELECT id, rule_id, cron_expression, enabled FROM schedules WHERE rule_id = $1 AND cron_expression = $2", ruleID, cronExpression).
+		Scan(&s.ID, &s.RuleID, &s.CronExpression, &s.Enabled)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
